@@ -7,4 +7,4 @@ test:
 	cd test_secured_fields && poetry run python manage.py test
 
 fix-lint:
-	poetry run yapf -pr secured_fields test_secured_fields
+	poetry run yapf -ipr secured_fields test_secured_fields
