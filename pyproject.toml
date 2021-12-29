@@ -20,6 +20,7 @@ cryptography = ">=35,<37"
 pylint = "^2"
 yapf = "^0"
 toml = "^0"
+ipdb = "^0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
