@@ -22,8 +22,41 @@ class BaseFieldTestCase(test.TestCase):
         self.assertEqual(decrypted_value, expected_bytes)
 
 
+class BooleanFieldTestCase(BaseFieldTestCase):
+    model_class = models.BooleanFieldModel
+
+    def test_simple(self):
+        model = self.model_class.objects.create(field=True)
+
+        self.assertEqual(self.model_class.objects.count(), 1)
+        self.assertEqual(model.field, True)
+        self.assertEncryptedField(b'True')
+
+
 class CharFieldTestCase(BaseFieldTestCase):
     model_class = models.CharFieldModel
+
+    def test_simple(self):
+        model = self.model_class.objects.create(field='test')
+
+        self.assertEqual(self.model_class.objects.count(), 1)
+        self.assertEqual(model.field, 'test')
+        self.assertEncryptedField(b'test')
+
+
+class IntegerFieldTestCase(BaseFieldTestCase):
+    model_class = models.IntegerFieldModel
+
+    def test_simple(self):
+        model = self.model_class.objects.create(field=100)
+
+        self.assertEqual(self.model_class.objects.count(), 1)
+        self.assertEqual(model.field, 100)
+        self.assertEncryptedField(b'100')
+
+
+class TextFieldTestCase(BaseFieldTestCase):
+    model_class = models.TextFieldModel
 
     def test_simple(self):
         model = self.model_class.objects.create(field='test')
