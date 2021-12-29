@@ -75,6 +75,7 @@ jobs:
           python -V
           poetry show django
       - name: Run tests
+        working-directory: ./test_secured_fields
         env:
           DJANGO_SETTINGS_MODULE: tests.settings
         run: |
