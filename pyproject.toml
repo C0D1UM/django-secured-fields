@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "django-secured-fields"
+version = "0.1.0"
+description = ""
+authors = ["CODIUM <support@codium.co>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+django = "^3.0"
+cryptography = ">=35,<37"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2"
+yapf = "^0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
