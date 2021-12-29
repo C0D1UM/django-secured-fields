@@ -10,22 +10,22 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.10"
-    - name: Fetch pip cache
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: pip
-    - name: Install dependencies
-      run: |
-        pip install yapf
-    - name: Analyzing the code
-      run: |
-        yapf -dpr secured_fields test_secured_fields
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Fetch pip cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: pip
+      - name: Install dependencies
+        run: |
+          pip install yapf
+      - name: Analyzing the code
+        run: |
+          yapf -dpr secured_fields test_secured_fields
 
   test:
     needs:
@@ -33,8 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.8", "3.9", "3.10"]
-        django: ["3.0", "3.1", "3.2"]
+        python: [ "3.8", "3.9", "3.10" ]
+        django: [ "3.0", "3.1", "3.2" ]
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
           # Python 3.9 is compatible with Django 3.1+, Django REST 3.12+
