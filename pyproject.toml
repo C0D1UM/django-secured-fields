@@ -19,11 +19,19 @@ cryptography = ">=35,<37"
 [tool.poetry.dev-dependencies]
 pylint = "^2"
 yapf = "^0"
+toml = "^0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
 style = "semver"
+
+[tool.yapf]
+based_on_style = 'google'
+column_limit = 120
+coalesce_brackets = true
+dedent_closing_brackets = true
+split_arguments_when_comma_terminated = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
