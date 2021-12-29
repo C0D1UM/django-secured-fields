@@ -77,6 +77,6 @@ jobs:
       - name: Run tests
         working-directory: ./test_secured_fields
         env:
-          DJANGO_SETTINGS_MODULE: main.settings
+          DJANGO_SETTINGS_MODULE: config.settings
         run: |
           poetry run python manage.py test
