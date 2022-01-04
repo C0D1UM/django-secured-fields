@@ -90,7 +90,7 @@ class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
         self.assert_encrypted_field(b'2021-12-31')
 
 
-@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3))
+@freeze_time(datetime.datetime(2021, 12, 31))
 class DateFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
     model_class = models.DateFieldAutoNowModel
 
@@ -122,6 +122,15 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
         self.create_and_assert(timezone.localtime(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)))
+        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
+
+
+@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3))
+class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
+    model_class = models.DateTimeFieldAutoNowModel
+
+    def test_simple(self):
+        self.create_and_assert(test_utils.NoValue, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
         self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
 
 

@@ -27,6 +27,10 @@ class DateTimeFieldModel(models.Model):
     field = secured_fields.EncryptedDateTimeField(null=True)
 
 
+class DateTimeFieldAutoNowModel(models.Model):
+    field = secured_fields.EncryptedDateTimeField(auto_now=True)
+
+
 class DateTimeAutoNowFieldModel(models.Model):
     field = secured_fields.EncryptedDateTimeField(auto_now=True)
 
