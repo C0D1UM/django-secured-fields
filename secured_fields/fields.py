@@ -15,7 +15,8 @@ from . import mixins
 
 
 class EncryptedBinaryField(mixins.EncryptedMixin, models.BinaryField):
-    pass
+    def prepare_encryption(self, value) -> bytes:
+        return value
 
 
 class EncryptedBooleanField(mixins.EncryptedMixin, models.BooleanField):

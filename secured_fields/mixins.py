@@ -21,13 +21,16 @@ class EncryptedMixin(object):
     def prepare_string(self, value) -> str:
         return str(value)
 
+    def prepare_encryption(self, value) -> bytes:
+        return self.prepare_string(value).encode()
+
     def get_prep_value(self, value):
         if value is None:
             return value
 
         value = super().get_prep_value(value)
-        value = self.prepare_string(value)
-        return get_fernet().encrypt(value.encode())
+        value = self.prepare_encryption(value)
+        return get_fernet().encrypt(value)
 
     def to_python(self, value):
         if value is None:
@@ -37,7 +40,7 @@ class EncryptedMixin(object):
             return value
 
         try:
-            value = get_fernet().decrypt(value).decode()
+            value = get_fernet().decrypt(value)
         except fernet.InvalidToken:
             pass
 

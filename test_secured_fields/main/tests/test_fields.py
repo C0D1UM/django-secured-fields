@@ -37,6 +37,16 @@ class BaseTestCases:
             self.assertIsEncryptedNone()
 
 
+class BinaryFieldTestCase(BaseTestCases.BaseFieldTestCase):
+    model_class = models.BinaryFieldModel
+
+    def test_simple(self):
+        model = self.model_class.objects.create(field=b'test')
+
+        self.assertEqual(model.field, b'test')
+        self.assertEncryptedField(b'test')
+
+
 class BooleanFieldTestCase(BaseTestCases.BaseFieldTestCase):
     model_class = models.BooleanFieldModel
 
