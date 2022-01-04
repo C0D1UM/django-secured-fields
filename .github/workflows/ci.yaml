@@ -22,10 +22,10 @@ jobs:
           key: pip
       - name: Install dependencies
         run: |
-          pip install yapf toml
+          pip install pylint~=2.0
       - name: Analyzing the code
         run: |
-          yapf -dpr secured_fields test_secured_fields
+          pylint secured_fields test_secured_fields
 
   test:
     needs:
