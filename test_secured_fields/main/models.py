@@ -49,6 +49,7 @@ class FileFieldNoEncryptionModel(models.Model):
 
 
 class FileFieldCustomEncryptionModel(models.Model):
+
     class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSystemStorage):
         pass
 

@@ -18,6 +18,7 @@ from secured_fields.fernet import get_fernet
 
 
 class BaseTestCases:
+
     class BaseFieldTestCase(test.TestCase):
         model_class: typing.Type[Model]
 
