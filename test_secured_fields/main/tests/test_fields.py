@@ -38,7 +38,6 @@ class BaseTestCases:
             self.assertEqual(decrypted_value, expected_bytes)
 
         def create_and_assert(self, create_value, assert_value: typing.Any = test_utils.NoValue, **extra_options):
-            extra_options = extra_options
             if create_value is not test_utils.NoValue:
                 extra_options['field'] = create_value
 
