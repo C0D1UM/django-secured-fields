@@ -4,6 +4,7 @@ __all__ = [
     'EncryptedCharField',
     'EncryptedDateField',
     'EncryptedDateTimeField',
+    'EncryptedDecimalField',
     'EncryptedIntegerField',
     'EncryptedTextField',
 ]
@@ -33,6 +34,13 @@ class EncryptedDateField(mixins.DateMixin, mixins.EncryptedMixin, models.DateFie
 
 class EncryptedDateTimeField(mixins.DateMixin, mixins.EncryptedMixin, models.DateTimeField):
     pass
+
+
+class EncryptedDecimalField(mixins.EncryptedMixin, models.DecimalField):
+
+    def get_db_prep_save(self, value, connection):
+        value = super().get_db_prep_save(value, connection)
+        return self.get_db_prep_value(value, connection, prepared=False)
 
 
 class EncryptedIntegerField(mixins.EncryptedMixin, models.IntegerField):

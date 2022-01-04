@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import typing
 
 import pytz
@@ -78,6 +79,7 @@ class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
         self.assert_encrypted_field(b'test')
 
     def test_exceed_max_length(self):
+        # TODO: enforce validation
         model = self.model_class(field='1234567890123456789012345678901')
         self.assertRaises(exceptions.ValidationError, model.full_clean)
 
@@ -134,13 +136,19 @@ class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
         self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
 
 
+class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.DecimalFieldModel
+
+    def test_simple(self):
+        self.create_and_assert(decimal.Decimal('100.23'))
+        self.assert_encrypted_field(b'100.23')
+
+
 class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.IntegerFieldModel
 
     def test_simple(self):
-        model = self.model_class.objects.create(field=100)
-
-        self.assertEqual(model.field, 100)
+        self.create_and_assert(100)
         self.assert_encrypted_field(b'100')
 
 
@@ -148,7 +156,5 @@ class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
     model_class = models.TextFieldModel
 
     def test_simple(self):
-        model = self.model_class.objects.create(field='test')
-
-        self.assertEqual(model.field, 'test')
+        self.create_and_assert('test')
         self.assert_encrypted_field(b'test')

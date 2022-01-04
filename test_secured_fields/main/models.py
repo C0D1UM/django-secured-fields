@@ -31,6 +31,10 @@ class DateTimeFieldAutoNowModel(models.Model):
     field = secured_fields.EncryptedDateTimeField(auto_now=True)
 
 
+class DecimalFieldModel(models.Model):
+    field = secured_fields.EncryptedDecimalField(max_digits=6, decimal_places=2, null=True)
+
+
 class DateTimeAutoNowFieldModel(models.Model):
     field = secured_fields.EncryptedDateTimeField(auto_now=True)
 

@@ -82,7 +82,7 @@ DATABASES = {
         'NAME': 'db',
         'USER': 'postgres',
         'PASSWORD': env.str('POSTGRES_PASSWORD', 'P@ssw0rd'),
-        'HOST': env.str('POSTGRES_HOST', 'localhost'),
+        'HOST': env.str('POSTGRES_HOST', '127.0.0.1'),
         'PORT': env.int('POSTGRES_PORT', 5432),
     },
     'mysql': {
@@ -90,7 +90,7 @@ DATABASES = {
         'NAME': 'db',
         'USER': 'root',
         'PASSWORD': env.str('MYSQL_ROOT_PASSWORD', 'P@ssw0rd'),
-        'HOST': env.str('MYSQL_HOST', 'localhost'),
+        'HOST': env.str('MYSQL_HOST', '127.0.0.1'),
         'PORT': env.int('MYSQL_PORT', 3306),
     },
 }
