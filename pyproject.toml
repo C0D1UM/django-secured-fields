@@ -23,7 +23,8 @@ toml = "^0"
 ipdb = "^0"
 psycopg2-binary = "^2.9"
 mysqlclient = "^2.1"
-freezegun = "^1.1.0"
+freezegun = "^1.1"
+django-environ = "^0.8"
 
 [tool.poetry-dynamic-versioning]
 enable = true
