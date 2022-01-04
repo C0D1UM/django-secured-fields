@@ -15,10 +15,6 @@ class CharFieldModel(models.Model):
     field = secured_fields.EncryptedCharField(max_length=30, null=True)
 
 
-class CharFieldModell(models.Model):
-    field = models.CharField(max_length=30)
-
-
 class DateFieldModel(models.Model):
     field = secured_fields.EncryptedDateField(null=True)
 
