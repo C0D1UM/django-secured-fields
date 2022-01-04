@@ -1,4 +1,9 @@
-__all__ = ['EncryptedMixin']
+__all__ = [
+    'EncryptedMixin',
+    'DateMixin',
+]
+
+import typing
 
 from cryptography import fernet
 from django.utils.functional import cached_property
@@ -32,6 +37,21 @@ class EncryptedMixin(object):
         value = self.prepare_encryption(value)
         return get_fernet().encrypt(value)
 
+    def decrypt(self, value: bytes) -> typing.Union[bytes, str]:
+        value = get_fernet().decrypt(value)
+
+        # convert to str if not expecting bytes
+        if super().get_internal_type() != 'BinaryField':
+            value = value.decode()
+
+        return value
+
+    def from_db_value(self, value: memoryview, expression, connection):  # pylint: disable=unused-argument
+        if value is None:
+            return value
+
+        return self.to_python(value.tobytes())
+
     def to_python(self, value):
         if value is None:
             return value
@@ -40,7 +60,7 @@ class EncryptedMixin(object):
             return value
 
         try:
-            value = get_fernet().decrypt(value)
+            value = self.decrypt(value)
         except fernet.InvalidToken:
             pass
 
@@ -54,3 +74,8 @@ class EncryptedMixin(object):
         self.internal_type = self._encrypted_internal_type
 
         return results
+
+
+class DateMixin(object):
+    def prepare_string(self, value) -> str:
+        return value.isoformat()

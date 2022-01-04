@@ -9,7 +9,6 @@ __all__ = [
 ]
 
 from django.db import models
-from django.utils.functional import cached_property
 
 from . import mixins
 
@@ -27,11 +26,11 @@ class EncryptedCharField(mixins.EncryptedMixin, models.CharField):
     pass
 
 
-class EncryptedDateField(mixins.EncryptedMixin, models.DateField):
+class EncryptedDateField(mixins.DateMixin, mixins.EncryptedMixin, models.DateField):
     pass
 
 
-class EncryptedDateTimeField(mixins.EncryptedMixin, models.DateTimeField):
+class EncryptedDateTimeField(mixins.DateMixin, mixins.EncryptedMixin, models.DateTimeField):
     pass
 
 

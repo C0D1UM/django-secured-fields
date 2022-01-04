@@ -43,18 +43,17 @@ class BaseTestCases:
                 extra_options['field'] = create_value
 
             self.model = self.model_class.objects.create(**extra_options)
-            # self.model.refresh_from_db()
+            self.model.refresh_from_db()
 
             self.assertEqual(self.model.field, assert_value if assert_value is not test_utils.NoValue else create_value)
 
+    class NullValueTestMixin(object):
         def test_null(self):
-            model = self.model_class.objects.create(field=None)
-
-            self.assertIsNone(model.field)
+            self.create_and_assert(None)
             self.assert_is_encrypted_none()
 
 
-class BinaryFieldTestCase(BaseTestCases.BaseFieldTestCase):
+class BinaryFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.BinaryFieldModel
 
     def test_simple(self):
@@ -62,7 +61,7 @@ class BinaryFieldTestCase(BaseTestCases.BaseFieldTestCase):
         self.assert_encrypted_field(b'test')
 
 
-class BooleanFieldTestCase(BaseTestCases.BaseFieldTestCase):
+class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.BooleanFieldModel
 
     def test_simple(self):
@@ -70,7 +69,7 @@ class BooleanFieldTestCase(BaseTestCases.BaseFieldTestCase):
         self.assert_encrypted_field(b'True')
 
 
-class CharFieldTestCase(BaseTestCases.BaseFieldTestCase):
+class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.CharFieldModel
 
     def test_simple(self):
@@ -82,7 +81,7 @@ class CharFieldTestCase(BaseTestCases.BaseFieldTestCase):
         self.assertRaises(exceptions.ValidationError, model.full_clean)
 
 
-class DateFieldTestCase(BaseTestCases.BaseFieldTestCase):
+class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.DateFieldModel
 
     def test_simple(self):
@@ -90,31 +89,43 @@ class DateFieldTestCase(BaseTestCases.BaseFieldTestCase):
         self.assert_encrypted_field(b'2021-12-31')
 
 
-class DateTimeFieldTestCase(BaseTestCases.BaseFieldTestCase):
+@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3))
+class DateFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
+    model_class = models.DateFieldAutoNowModel
+
+    def test_simple(self):
+        self.create_and_assert(test_utils.NoValue, datetime.date(2021, 12, 31))
+        self.assert_encrypted_field(b'2021-12-31')
+
+
+class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.DateTimeFieldModel
 
     @test.override_settings(USE_TZ=False)
     def test_naive_no_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03')
+        self.assert_encrypted_field(b'2021-12-31T23:59:03')
 
     @test.override_settings(USE_TZ=True)
     def test_naive_use_tz(self):
-        self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        self.create_and_assert(
+            datetime.datetime(2021, 12, 31, 23, 59, 3),
+            datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+        )
+        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_utc_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
         self.create_and_assert(timezone.localtime(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
 
 
-class IntegerFieldTestCase(BaseTestCases.BaseFieldTestCase):
+class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.IntegerFieldModel
 
     def test_simple(self):
@@ -124,7 +135,7 @@ class IntegerFieldTestCase(BaseTestCases.BaseFieldTestCase):
         self.assert_encrypted_field(b'100')
 
 
-class TextFieldTestCase(BaseTestCases.BaseFieldTestCase):
+class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.TextFieldModel
 
     def test_simple(self):
