@@ -1,6 +1,7 @@
 __all__ = ['EncryptedMixin']
 
 from cryptography import fernet
+from django.utils.functional import cached_property
 
 from .fernet import get_fernet
 
@@ -11,6 +12,9 @@ class EncryptedMixin(object):
     def get_internal_type(self):
         return 'BinaryField'
 
+    def get_original_internal_type(self):
+        return super().get_internal_type()
+
     def prepare_string(self, value) -> str:
         return str(value)
 
@@ -18,6 +22,7 @@ class EncryptedMixin(object):
         if value is None:
             return value
 
+        value = super().get_prep_value(value)
         value = self.prepare_string(value)
         return get_fernet().encrypt(value.encode())
 
@@ -34,3 +39,15 @@ class EncryptedMixin(object):
             pass
 
         return super().to_python(value)
+
+
+class IntegerFieldMixin(object):
+    """Mixin for correcting internal type using for validation in integer-based fields"""
+
+    @cached_property
+    def validators(self):
+        self.get_internal_type = super().get_original_internal_type
+        results = super().validators
+        self.get_internal_type = super().get_internal_type
+
+        return results
