@@ -1,3 +1,4 @@
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 
 import secured_fields
@@ -37,6 +38,25 @@ class DecimalFieldModel(models.Model):
 
 class DateTimeAutoNowFieldModel(models.Model):
     field = secured_fields.EncryptedDateTimeField(auto_now=True)
+
+
+class FileFieldModel(models.Model):
+    field = secured_fields.EncryptedFileField(null=True)
+
+
+class FileFieldNoEncryptionModel(models.Model):
+    field = models.FileField()
+
+
+class FileFieldCustomEncryptionModel(models.Model):
+    class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSystemStorage):
+        pass
+
+    field = models.FileField(storage=CustomEncryptedFileStorage(), null=True)
+
+
+class ImageFieldModel(models.Model):
+    field = secured_fields.EncryptedImageField(null=True)
 
 
 class IntegerFieldModel(models.Model):

@@ -1,11 +1,14 @@
 __all__ = [
-    'EncryptedMixin',
     'DateMixin',
+    'EncryptedMixin',
+    'EncryptedStorageMixin',
 ]
 
 import typing
+from io import BytesIO
 
 from cryptography import fernet
+from django.core.files import File
 from django.utils.functional import cached_property
 
 from .fernet import get_fernet
@@ -87,3 +90,20 @@ class DateMixin(object):
 
     def prepare_string(self, value) -> str:
         return value.isoformat()
+
+
+class EncryptedStorageMixin(object):
+    """Mixin for encrypt/decrypt file content before saving/after getting from the storage"""
+
+    def _open(self, name, mode='rb'):
+        content = super()._open(name, mode)
+        decrypted_content = get_fernet().decrypt(content.read())
+        return File(BytesIO(decrypted_content))
+
+    def _save(self, name, content):
+        encrypted_content = get_fernet().encrypt(content.read())
+        content.seek(0)
+        content.write(encrypted_content)
+        content.seek(0)
+
+        return super()._save(name, content)

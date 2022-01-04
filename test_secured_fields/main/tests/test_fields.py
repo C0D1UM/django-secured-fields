@@ -1,10 +1,12 @@
 import datetime
 import decimal
 import typing
+import warnings
 
 import pytz
 from django import test
 from django.core import exceptions
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.db.models import Model
 from django.utils import timezone
@@ -16,7 +18,6 @@ from secured_fields.fernet import get_fernet
 
 
 class BaseTestCases:
-
     class BaseFieldTestCase(test.TestCase):
         model_class: typing.Type[Model]
 
@@ -111,6 +112,8 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
 
     @test.override_settings(USE_TZ=True)
     def test_naive_use_tz(self):
+        warnings.simplefilter('ignore', RuntimeWarning)
+
         self.create_and_assert(
             datetime.datetime(2021, 12, 31, 23, 59, 3), datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
         )
@@ -142,6 +145,50 @@ class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
     def test_simple(self):
         self.create_and_assert(decimal.Decimal('100.23'))
         self.assert_encrypted_field(b'100.23')
+
+
+class FileFieldTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.FileFieldModel
+
+    def setUp(self) -> None:
+        self.uploaded_file = SimpleUploadedFile('test.txt', b'test')
+
+    def test_simple(self):
+        model = self.model_class.objects.create(field=self.uploaded_file)
+        model.refresh_from_db()
+
+        self.assertTrue(model.field)
+        self.assertEqual(model.field.name, 'test.txt')
+        self.assertEqual(model.field.read(), b'test')
+        with open(model.field.path, 'rb') as f:
+            self.assertEqual(get_fernet().decrypt(f.read()), b'test')
+
+    def test_null(self):
+        model = self.model_class.objects.create(field=None)
+        model.refresh_from_db()
+
+        self.assertFalse(model.field)
+
+
+class FileFieldNoEncryptionTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.FileFieldNoEncryptionModel
+
+    def setUp(self) -> None:
+        self.uploaded_file = SimpleUploadedFile('test.txt', b'test')
+
+    def test_simple(self):
+        model = self.model_class.objects.create(field=self.uploaded_file)
+        model.refresh_from_db()
+
+        self.assertTrue(model.field)
+        self.assertEqual(model.field.name, 'test.txt')
+        self.assertEqual(model.field.read(), b'test')
+        with open(model.field.path, 'rb') as f:
+            self.assertEqual(f.read(), b'test')
+
+
+class FileFieldCustomEncryptionTestCase(FileFieldTestCase):
+    model_class = models.FileFieldCustomEncryptionModel
 
 
 class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):

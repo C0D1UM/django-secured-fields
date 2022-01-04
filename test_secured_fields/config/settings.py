@@ -143,7 +143,12 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Secure fields
-# WARNING: this key is intended to use only for testing
+# Media files
+# https://docs.djangoproject.com/en/3.2/ref/settings/#media-root
 
-SECURED_FIELDS_KEY = 'IQZa4YrTPq74RuBRiCSufZO27tOLQwmF3Q7KZn4YTps='
+MEDIA_ROOT = str(BASE_DIR.parent / 'media')
+
+# Secure fields
+
+SECURED_FIELDS_KEY = 'IQZa4YrTPq74RuBRiCSufZO27tOLQwmF3Q7KZn4YTps='  # WARNING: this key is intended to use for testing
+ENCRYPTED_FILE_STORAGE = 'secured_fields.storage.EncryptedFileSystemStorage'
