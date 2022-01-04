@@ -5,6 +5,8 @@ __all__ = [
     'EncryptedDateField',
     'EncryptedDateTimeField',
     'EncryptedDecimalField',
+    'EncryptedFileField',
+    'EncryptedImageField',
     'EncryptedIntegerField',
     'EncryptedJSONField',
     'EncryptedTextField',
@@ -12,7 +14,8 @@ __all__ = [
 
 from django.db import models
 
-from . import mixins
+from .files import *
+from .. import mixins
 
 
 class EncryptedBinaryField(mixins.EncryptedMixin, models.BinaryField):
@@ -49,7 +52,6 @@ class EncryptedIntegerField(mixins.EncryptedMixin, models.IntegerField):
 
 
 class EncryptedJSONField(mixins.EncryptedMixin, models.JSONField):
-
     call_super_from_db_value = True
 
 
