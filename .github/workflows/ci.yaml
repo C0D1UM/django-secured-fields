@@ -35,8 +35,8 @@ jobs:
       matrix:
         python: [ "3.8", "3.9", "3.10" ]
         django: [ "3.1", "3.2" ]
-        postgres: [ "14" ]
-        mysql: [ "8" ]
+        postgres: [ "12.9", "13.5", "14.1" ]
+        mysql: [ "5.7", "8.0" ]
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
           # Python 3.10 is compatible with Django 3.2+
