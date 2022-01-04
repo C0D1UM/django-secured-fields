@@ -7,3 +7,37 @@
 ![Django Version](https://img.shields.io/badge/django-3.0%20%7C%203.1%20%7C%203.2-blue)
 
 Django encrypted fields with search enabled.
+
+# Usage
+
+_TBD_
+
+# Development
+
+## Requirements
+
+- Docker
+- Poetry
+- MySQL Client
+  - `brew install mysql-client`
+  - `echo 'export PATH="/usr/local/opt/mysql-client/bin:$PATH"' >> ~/.bash_profile`
+
+## Running Project
+
+### Start backend databases
+
+```bash
+make up-db
+```
+
+### Linting
+
+```bash
+make lint
+```
+
+### Testing
+
+```bash
+make test
+```
