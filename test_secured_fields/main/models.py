@@ -43,5 +43,9 @@ class IntegerFieldModel(models.Model):
     field = secured_fields.EncryptedIntegerField(null=True)
 
 
+class JSONFieldModel(models.Model):
+    field = secured_fields.EncryptedJSONField(null=True)
+
+
 class TextFieldModel(models.Model):
     field = secured_fields.EncryptedTextField(null=True)

@@ -15,7 +15,9 @@ class EncryptedMixin(object):
     """Mixin for encrypting/decrypting field value"""
 
     _encrypted_internal_type = 'BinaryField'
+
     internal_type = _encrypted_internal_type
+    call_super_from_db_value = False
 
     def get_internal_type(self):
         return self.internal_type
@@ -50,7 +52,12 @@ class EncryptedMixin(object):
         if value is None:
             return value
 
-        return self.to_python(value.tobytes())
+        value = self.to_python(value.tobytes())
+
+        if self.call_super_from_db_value:
+            value = super().from_db_value(value, expression, connection)
+
+        return value
 
     def to_python(self, value):
         if value is None:

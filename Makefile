@@ -4,7 +4,7 @@ lint:
 	poetry run pylint secured_fields test_secured_fields
 
 test:
-	cd test_secured_fields && poetry run python manage.py test
+	cd test_secured_fields && poetry run python manage.py test $(filter-out $@,$(MAKECMDGOALS))
 
 yapf:
 	poetry run yapf -ipr secured_fields test_secured_fields
@@ -19,7 +19,7 @@ generate-key:
 	cd test_secured_fields && poetry run python manage.py generate_key
 
 up-db:
-	cd test_secured_fields && docker-compose up -d
+	cd test_secured_fields && docker-compose up -d $(filter-out $@,$(MAKECMDGOALS))
 
 down-db:
 	cd test_secured_fields && docker-compose down

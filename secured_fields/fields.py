@@ -6,8 +6,11 @@ __all__ = [
     'EncryptedDateTimeField',
     'EncryptedDecimalField',
     'EncryptedIntegerField',
+    'EncryptedJSONField',
     'EncryptedTextField',
 ]
+
+import json
 
 from django.db import models
 
@@ -45,6 +48,11 @@ class EncryptedDecimalField(mixins.EncryptedMixin, models.DecimalField):
 
 class EncryptedIntegerField(mixins.EncryptedMixin, models.IntegerField):
     pass
+
+
+class EncryptedJSONField(mixins.EncryptedMixin, models.JSONField):
+
+    call_super_from_db_value = True
 
 
 class EncryptedTextField(mixins.EncryptedMixin, models.TextField):

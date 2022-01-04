@@ -152,6 +152,14 @@ class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
         self.assert_encrypted_field(b'100')
 
 
+class JSONFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.JSONFieldModel
+
+    def test_simple(self):
+        self.create_and_assert({'name': 'John Doe'})
+        self.assert_encrypted_field(b'{"name": "John Doe"}')
+
+
 class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.TextFieldModel
 
