@@ -15,6 +15,7 @@ from secured_fields.fernet import get_fernet
 
 
 class BaseTestCases:
+
     class BaseFieldTestCase(test.TestCase):
         model_class: typing.Type[Model]
 
@@ -47,6 +48,7 @@ class BaseTestCases:
             self.assertEqual(self.model.field, assert_value if assert_value is not test_utils.NoValue else create_value)
 
     class NullValueTestMixin(object):
+
         def test_null(self):
             self.create_and_assert(None)
             self.assert_is_encrypted_none()
@@ -108,8 +110,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
     @test.override_settings(USE_TZ=True)
     def test_naive_use_tz(self):
         self.create_and_assert(
-            datetime.datetime(2021, 12, 31, 23, 59, 3),
-            datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+            datetime.datetime(2021, 12, 31, 23, 59, 3), datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
         )
         self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
 

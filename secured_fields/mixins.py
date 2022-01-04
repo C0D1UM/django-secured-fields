@@ -77,5 +77,6 @@ class EncryptedMixin(object):
 
 
 class DateMixin(object):
+
     def prepare_string(self, value) -> str:
         return value.isoformat()
