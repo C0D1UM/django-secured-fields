@@ -28,10 +28,10 @@ class BaseTestCases:
                 result = cursor.fetchone()[0]
                 return result.tobytes() if result is not None else result
 
-        def assertIsEncryptedNone(self):
+        def assert_is_encrypted_none(self):
             self.assertIsNone(self.get_raw_field())
 
-        def assertEncryptedField(self, expected_bytes: bytes):
+        def assert_encrypted_field(self, expected_bytes: bytes):
             field_value = self.get_raw_field()
             decrypted_value = get_fernet().decrypt(field_value)
 
@@ -51,7 +51,7 @@ class BaseTestCases:
             model = self.model_class.objects.create(field=None)
 
             self.assertIsNone(model.field)
-            self.assertIsEncryptedNone()
+            self.assert_is_encrypted_none()
 
 
 class BinaryFieldTestCase(BaseTestCases.BaseFieldTestCase):
@@ -59,7 +59,7 @@ class BinaryFieldTestCase(BaseTestCases.BaseFieldTestCase):
 
     def test_simple(self):
         self.create_and_assert(b'test')
-        self.assertEncryptedField(b'test')
+        self.assert_encrypted_field(b'test')
 
 
 class BooleanFieldTestCase(BaseTestCases.BaseFieldTestCase):
@@ -67,7 +67,7 @@ class BooleanFieldTestCase(BaseTestCases.BaseFieldTestCase):
 
     def test_simple(self):
         self.create_and_assert(True)
-        self.assertEncryptedField(b'True')
+        self.assert_encrypted_field(b'True')
 
 
 class CharFieldTestCase(BaseTestCases.BaseFieldTestCase):
@@ -75,7 +75,7 @@ class CharFieldTestCase(BaseTestCases.BaseFieldTestCase):
 
     def test_simple(self):
         self.create_and_assert('test')
-        self.assertEncryptedField(b'test')
+        self.assert_encrypted_field(b'test')
 
     def test_exceed_max_length(self):
         model = self.model_class(field='1234567890123456789012345678901')
@@ -87,7 +87,7 @@ class DateFieldTestCase(BaseTestCases.BaseFieldTestCase):
 
     def test_simple(self):
         self.create_and_assert(datetime.date(2021, 12, 31))
-        self.assertEncryptedField(b'2021-12-31')
+        self.assert_encrypted_field(b'2021-12-31')
 
 
 class DateTimeFieldTestCase(BaseTestCases.BaseFieldTestCase):
@@ -96,22 +96,22 @@ class DateTimeFieldTestCase(BaseTestCases.BaseFieldTestCase):
     @test.override_settings(USE_TZ=False)
     def test_naive_no_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3))
-        self.assertEncryptedField(b'2021-12-31 23:59:03')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03')
 
     @test.override_settings(USE_TZ=True)
     def test_naive_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3))
-        self.assertEncryptedField(b'2021-12-31 23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_utc_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-        self.assertEncryptedField(b'2021-12-31 23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
         self.create_and_assert(timezone.localtime(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)))
-        self.assertEncryptedField(b'2021-12-31 23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
 
 class IntegerFieldTestCase(BaseTestCases.BaseFieldTestCase):
@@ -121,7 +121,7 @@ class IntegerFieldTestCase(BaseTestCases.BaseFieldTestCase):
         model = self.model_class.objects.create(field=100)
 
         self.assertEqual(model.field, 100)
-        self.assertEncryptedField(b'100')
+        self.assert_encrypted_field(b'100')
 
 
 class TextFieldTestCase(BaseTestCases.BaseFieldTestCase):
@@ -131,4 +131,4 @@ class TextFieldTestCase(BaseTestCases.BaseFieldTestCase):
         model = self.model_class.objects.create(field='test')
 
         self.assertEqual(model.field, 'test')
-        self.assertEncryptedField(b'test')
+        self.assert_encrypted_field(b'test')
