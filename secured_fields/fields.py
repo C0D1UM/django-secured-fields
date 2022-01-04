@@ -10,8 +10,6 @@ __all__ = [
     'EncryptedTextField',
 ]
 
-import json
-
 from django.db import models
 
 from . import mixins
