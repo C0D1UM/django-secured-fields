@@ -39,7 +39,7 @@ jobs:
         mysql: [ "8" ]
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
-          # Python 3.9 is compatible with Django 3.1+, Django REST 3.12+
+          # Python 3.9 is compatible with Django 3.1+
           - python: "3.9"
             django: "3.0"
           # Python 3.10 is compatible with Django 3.2+
@@ -105,9 +105,7 @@ jobs:
         working-directory: ./test_secured_fields
         env:
           DJANGO_SETTINGS_MODULE: config.settings
-          POSTGRES_HOST: postgres
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
-          MYSQL_HOST: mysql
           MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
         run: |
           poetry run python manage.py test
