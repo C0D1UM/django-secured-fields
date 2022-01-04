@@ -15,6 +15,9 @@ class EncryptedMixin(object):
         return str(value)
 
     def get_prep_value(self, value):
+        if value is None:
+            return value
+
         value = self.prepare_string(value)
         return get_fernet().encrypt(value.encode())
 
