@@ -56,6 +56,10 @@ class CharFieldTestCase(BaseTestCases.BaseFieldTestCase):
         self.assertEqual(model.field, 'test')
         self.assertEncryptedField(b'test')
 
+    def test_exceed_max_length(self):
+        model = self.model_class(field='1234567890123456789012345678901')
+        self.assertRaises(exceptions.ValidationError, model.full_clean)
+
 
 class IntegerFieldTestCase(BaseTestCases.BaseFieldTestCase):
     model_class = models.IntegerFieldModel
