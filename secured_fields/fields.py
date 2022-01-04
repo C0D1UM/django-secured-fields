@@ -34,7 +34,7 @@ class EncryptedDateTimeField(mixins.EncryptedMixin, models.DateTimeField):
     pass
 
 
-class EncryptedIntegerField(mixins.IntegerFieldMixin, mixins.EncryptedMixin, models.IntegerField):
+class EncryptedIntegerField(mixins.EncryptedMixin, models.IntegerField):
     pass
 
 

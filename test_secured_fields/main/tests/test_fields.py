@@ -1,5 +1,7 @@
+import typing
 from unittest.case import skip
 from django import test
+from django.core import exceptions
 from django.db import connection
 from django.db.models import Model
 
@@ -10,7 +12,7 @@ from secured_fields.fernet import get_fernet
 class BaseTestCases:
 
     class BaseFieldTestCase(test.TestCase):
-        model_class: Model
+        model_class: typing.Type[Model]
 
         def get_raw_field(self):
             with connection.cursor() as cursor:
