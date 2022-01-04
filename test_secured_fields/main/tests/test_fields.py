@@ -16,7 +16,8 @@ class BaseTestCases:
             with connection.cursor() as cursor:
                 # pylint: disable=protected-access
                 cursor.execute(f'SELECT field FROM {self.model_class._meta.db_table} LIMIT 1')
-                return cursor.fetchone()[0]
+                result = cursor.fetchone()[0]
+                return result.tobytes() if result is not None else result
 
         def assertIsEncryptedNone(self):
             self.assertIsNone(self.get_raw_field())
