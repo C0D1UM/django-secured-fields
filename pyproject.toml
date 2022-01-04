@@ -23,6 +23,7 @@ toml = "^0"
 ipdb = "^0"
 psycopg2-binary = "^2.9"
 mysqlclient = "^2.1"
+freezegun = "^1.1.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
