@@ -6,7 +6,7 @@ lint:
 test:
 	cd test_secured_fields && poetry run python manage.py test
 
-fix-lint:
+yapf:
 	poetry run yapf -ipr secured_fields test_secured_fields
 
 migrations:

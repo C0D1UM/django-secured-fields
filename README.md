@@ -30,6 +30,8 @@ _TBD_
 make up-db
 ```
 
+## Useful Commands
+
 ### Linting
 
 ```bash
@@ -40,4 +42,12 @@ make lint
 
 ```bash
 make test
+```
+
+### Fix Formatting
+
+> Using `yapf`
+
+```bash
+make yapf
 ```
