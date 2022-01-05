@@ -6,6 +6,7 @@ import warnings
 import pytz
 from django import test
 from django.core import exceptions
+from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.db.models import Model
@@ -14,6 +15,7 @@ from freezegun import freeze_time
 
 from main import models
 from main.tests import utils as test_utils
+import secured_fields
 from secured_fields.fernet import get_fernet
 
 
@@ -148,13 +150,17 @@ class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
         self.assert_encrypted_field(b'100.23')
 
 
+class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSystemStorage):
+    pass
+
+
 class FileFieldTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.FileFieldModel
 
     def setUp(self) -> None:
         self.uploaded_file = SimpleUploadedFile('test.txt', b'test')
 
-    def test_simple(self):
+    def _test(self):
         model = self.model_class.objects.create(field=self.uploaded_file)
         model.refresh_from_db()
 
@@ -164,11 +170,18 @@ class FileFieldTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCas
         with open(model.field.path, 'rb') as f:
             self.assertEqual(get_fernet().decrypt(f.read()), b'test')
 
+    def test_simple(self):
+        self._test()
+
     def test_null(self):
         model = self.model_class.objects.create(field=None)
         model.refresh_from_db()
 
         self.assertFalse(model.field)
+
+    @test.override_settings(ENCRYPTED_FILE_STORAGE='main.tests.test_fields.CustomEncryptedFileStorage')
+    def test_custom_fs_class(self):
+        self._test()
 
 
 class FileFieldNoEncryptionTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -186,10 +199,6 @@ class FileFieldNoEncryptionTestCase(test_utils.FileTestMixin, BaseTestCases.Base
         self.assertEqual(model.field.read(), b'test')
         with open(model.field.path, 'rb') as f:
             self.assertEqual(f.read(), b'test')
-
-
-class FileFieldCustomEncryptionTestCase(FileFieldTestCase):
-    model_class = models.FileFieldCustomEncryptionModel
 
 
 class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):

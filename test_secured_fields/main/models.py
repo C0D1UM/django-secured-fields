@@ -1,4 +1,3 @@
-from django.core.files.storage import FileSystemStorage
 from django.db import models
 
 import secured_fields
@@ -46,14 +45,6 @@ class FileFieldModel(models.Model):
 
 class FileFieldNoEncryptionModel(models.Model):
     field = models.FileField()
-
-
-class FileFieldCustomEncryptionModel(models.Model):
-
-    class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSystemStorage):
-        pass
-
-    field = models.FileField(storage=CustomEncryptedFileStorage(), null=True)
 
 
 class ImageFieldModel(models.Model):

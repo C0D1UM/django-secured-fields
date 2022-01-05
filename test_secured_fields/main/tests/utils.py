@@ -13,7 +13,6 @@ class FileTestMixin(object):
     Ref: https://dirtycoder.net/2016/02/09/testing-a-model-that-have-an-imagefield/
     """
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
+    def tearDown(self):
+        super().tearDown()
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
