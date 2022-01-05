@@ -1,5 +1,4 @@
 __all__ = [
-    'DateMixin',
     'EncryptedMixin',
     'EncryptedStorageMixin',
 ]
@@ -34,13 +33,18 @@ class EncryptedMixin(object):
     def prepare_encryption(self, value) -> bytes:
         return self.prepare_string(value).encode()
 
-    def get_prep_value(self, value):
+    def get_db_prep_save(self, value, connection):
         if value is None:
             return value
 
-        value = super().get_prep_value(value)
-        value = self.prepare_encryption(value)
+        if self.get_original_internal_type() != 'BinaryField':
+            value = super().get_db_prep_save(value, connection)
+            value = self.prepare_encryption(value)
+
         return get_fernet().encrypt(value)
+
+    # def get_db_prep_value(self, value, connection, prepared=None):  # pylint: disable=unused-argument
+    #     return super().get_db_prep_value(value, connection, prepared=False)
 
     def decrypt(self, value: bytes) -> typing.Union[bytes, str]:
         value = get_fernet().decrypt(value)
@@ -51,11 +55,15 @@ class EncryptedMixin(object):
 
         return value
 
-    def from_db_value(self, value: memoryview, expression, connection):  # pylint: disable=unused-argument
+    def from_db_value(self, value, expression, connection):  # pylint: disable=unused-argument
         if value is None:
             return value
 
-        value = self.to_python(value.tobytes())
+        # postgres support
+        if isinstance(value, memoryview):
+            value = value.tobytes()
+
+        value = self.to_python(value)
 
         if self.call_super_from_db_value:
             value = super().from_db_value(value, expression, connection)
@@ -84,12 +92,6 @@ class EncryptedMixin(object):
         self.internal_type = self._encrypted_internal_type
 
         return results
-
-
-class DateMixin(object):
-
-    def prepare_string(self, value) -> str:
-        return value.isoformat()
 
 
 class EncryptedStorageMixin(object):

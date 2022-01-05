@@ -32,7 +32,12 @@ class BaseTestCases:
                 # pylint: disable=protected-access
                 cursor.execute(f'SELECT field FROM {self.model_class._meta.db_table} LIMIT 1')
                 result = cursor.fetchone()[0]
-                return result.tobytes() if result is not None else result
+
+                # postgres support
+                if isinstance(result, memoryview) and result is not None:
+                    result = result.tobytes()
+
+                return result
 
         def assert_is_encrypted_none(self):
             self.assertIsNone(self.get_raw_field())
@@ -118,7 +123,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
     @test.override_settings(USE_TZ=False)
     def test_naive_no_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3))
-        self.assert_encrypted_field(b'2021-12-31T23:59:03')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03')
 
     @test.override_settings(USE_TZ=True)
     def test_naive_use_tz(self):
@@ -127,17 +132,17 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         self.create_and_assert(
             datetime.datetime(2021, 12, 31, 23, 59, 3), datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
         )
-        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_utc_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
         self.create_and_assert(timezone.localtime(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)))
-        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
 
 @freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3))
@@ -146,7 +151,7 @@ class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
 
     def test_simple(self):
         self.create_and_assert(test_utils.NoValue, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-        self.assert_encrypted_field(b'2021-12-31T23:59:03+00:00')
+        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
 
 class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):

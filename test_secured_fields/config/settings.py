@@ -53,8 +53,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'config.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -77,22 +75,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'db',
-        'USER': 'postgres',
-        'PASSWORD': env.str('POSTGRES_PASSWORD', 'P@ssw0rd'),
-        'HOST': env.str('POSTGRES_HOST', '127.0.0.1'),
-        'PORT': env.int('POSTGRES_PORT', 5432),
-    },
-    'mysql': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'db',
-        'USER': 'root',
-        'PASSWORD': env.str('MYSQL_ROOT_PASSWORD', 'P@ssw0rd'),
-        'HOST': env.str('MYSQL_HOST', '127.0.0.1'),
-        'PORT': env.int('MYSQL_PORT', 3306),
-    },
+    'default': env.db('DATABASE_URL'),
 }
 
 # Password validation

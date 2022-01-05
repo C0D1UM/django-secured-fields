@@ -3,8 +3,11 @@ default: fix-lint lint test
 lint:
 	poetry run pylint secured_fields test_secured_fields
 
-test:
-	cd test_secured_fields && poetry run python manage.py test $(filter-out $@,$(MAKECMDGOALS))
+test-pg:
+	cd test_secured_fields && DATABASE_URL=postgresql://postgres:P%40ssw0rd@localhost:5432/db poetry run python manage.py test $(filter-out $@,$(MAKECMDGOALS))
+
+test-mysql:
+	cd test_secured_fields && DATABASE_URL=mysql://root:P%40ssw0rd@127.0.0.1:3306/db poetry run python manage.py test $(filter-out $@,$(MAKECMDGOALS))
 
 yapf:
 	poetry run yapf -ipr secured_fields test_secured_fields
