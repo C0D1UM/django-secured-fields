@@ -18,6 +18,9 @@ migrations:
 migrate:
 	cd test_secured_fields && poetry run python manage.py migrate $(filter-out $@,$(MAKECMDGOALS))
 
+shell:
+	cd test_secured_fields && poetry run python manage.py shell_plus
+
 generate-key:
 	cd test_secured_fields && poetry run python manage.py generate_key
 
