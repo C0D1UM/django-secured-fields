@@ -143,10 +143,19 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         else:
             raise DatabaseBackendNotSupported
 
-    # @test.override_settings(USE_TZ=True)
-    # def test_utc_use_tz(self):
-    #     self.create_and_assert(timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.UTC))
-    #     self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+    @test.override_settings(USE_TZ=True)
+    def test_utc_use_tz(self):
+        create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.UTC)
+
+        if connection.vendor == DatabaseVendor.POSTGRESQL:
+            self.create_and_assert(create_value, assert_value=create_value)
+            self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        elif connection.vendor == DatabaseVendor.MYSQL:
+            # mysql is timezone naive
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
+            self.assert_encrypted_field(b'2021-12-31 23:59:03')
+        else:
+            raise DatabaseBackendNotSupported
 
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
