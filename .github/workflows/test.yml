@@ -79,6 +79,6 @@ jobs:
         working-directory: ./test_secured_fields
         env:
           DJANGO_SETTINGS_MODULE: config.settings
-          DATABASE_URL: ${{ inputs.data-base-url }}:${{ job.services.db.ports[inputs.database-port] }}/db
+          DATABASE_URL: ${{ inputs.database-url }}:${{ job.services.db.ports[inputs.database-port] }}/db
         run: |
           poetry run python manage.py test
