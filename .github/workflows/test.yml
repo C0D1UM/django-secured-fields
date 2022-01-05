@@ -70,7 +70,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install -n
-          poetry run pip install --no-input django~=${{ matrix.django }}.0
+          poetry add -n django@^${{ matrix.django }}.0
       - name: Verify package versions
         run: |
           python -V
