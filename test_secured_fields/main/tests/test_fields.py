@@ -1,3 +1,4 @@
+import base64
 import datetime
 import decimal
 import typing
@@ -13,14 +14,13 @@ from django.db.models import Model
 from django.utils import timezone
 from freezegun import freeze_time
 
+import secured_fields
 from main import models
 from main.tests import utils as test_utils
-import secured_fields
 from secured_fields.fernet import get_fernet
 
 
 class BaseTestCases:
-
     class BaseFieldTestCase(test.TestCase):
         model_class: typing.Type[Model]
 
@@ -57,6 +57,13 @@ class BaseTestCases:
         def test_null(self):
             self.create_and_assert(None)
             self.assert_is_encrypted_none()
+
+    class BaseFileFieldTestCase(test_utils.FileTestMixin, BaseFieldTestCase):
+        file_name: str
+        file_content: bytes
+
+        def setUp(self) -> None:
+            self.uploaded_file = SimpleUploadedFile(self.file_name, self.file_content)
 
 
 class BinaryFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -154,21 +161,20 @@ class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSyste
     pass
 
 
-class FileFieldTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCase):
+class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
     model_class = models.FileFieldModel
-
-    def setUp(self) -> None:
-        self.uploaded_file = SimpleUploadedFile('test.txt', b'test')
+    file_name = 'test.txt'
+    file_content = b'test'
 
     def _test(self):
         model = self.model_class.objects.create(field=self.uploaded_file)
         model.refresh_from_db()
 
         self.assertTrue(model.field)
-        self.assertEqual(model.field.name, 'test.txt')
-        self.assertEqual(model.field.read(), b'test')
+        self.assertEqual(model.field.name, self.file_name)
+        self.assertEqual(model.field.read(), self.file_content)
         with open(model.field.path, 'rb') as f:
-            self.assertEqual(get_fernet().decrypt(f.read()), b'test')
+            self.assertEqual(get_fernet().decrypt(f.read()), self.file_content)
 
     def test_simple(self):
         self._test()
@@ -184,21 +190,28 @@ class FileFieldTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCas
         self._test()
 
 
-class FileFieldNoEncryptionTestCase(test_utils.FileTestMixin, BaseTestCases.BaseFieldTestCase):
+class FileFieldNoEncryptionTestCase(BaseTestCases.BaseFileFieldTestCase):
     model_class = models.FileFieldNoEncryptionModel
-
-    def setUp(self) -> None:
-        self.uploaded_file = SimpleUploadedFile('test.txt', b'test')
+    file_name = 'test.txt'
+    file_content = b'test'
 
     def test_simple(self):
         model = self.model_class.objects.create(field=self.uploaded_file)
         model.refresh_from_db()
 
         self.assertTrue(model.field)
-        self.assertEqual(model.field.name, 'test.txt')
-        self.assertEqual(model.field.read(), b'test')
+        self.assertEqual(model.field.name, self.file_name)
+        self.assertEqual(model.field.read(), self.file_content)
         with open(model.field.path, 'rb') as f:
-            self.assertEqual(f.read(), b'test')
+            self.assertEqual(f.read(), self.file_content)
+
+
+class ImageFieldTestCase(FileFieldTestCase):
+    model_class = models.ImageFieldModel
+    file_name = 'test.png'
+    file_content = base64.b64decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+    )
 
 
 class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
