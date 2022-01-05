@@ -45,7 +45,7 @@ jobs:
     uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
     with:
       database-image: mysql
-      database-url: "mysql://root:P%40ssw0rd@localhost"
+      database-url: "mysql://root:P%40ssw0rd@127.0.0.1"
       database-port: 3306
       database-versions: >-
         [ "5.7", "8.0" ]
