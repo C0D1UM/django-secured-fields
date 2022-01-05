@@ -29,48 +29,26 @@ jobs:
   test-pg:
     needs:
       - lint
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        postgres: [ "12.9", "13.5", "14.1" ]
-    services:
-      postgres:
-        image: postgres:${{ matrix.postgres }}-alpine
-        env:
-          POSTGRES_DB: db
-          POSTGRES_PASSWORD: P@ssw0rd
-        ports:
-          - 5432/tcp
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: ./.github/workflows/shared/test.yml
-        with:
-          database-url: "postgresql://postgres:P%40ssw0rd@localhost:${{ job.services.postgres.ports[5432] }}/db"
+    uses: ./.github/workflows/shared/test.yml@${{ github.sha }}
+    with:
+      database-image: postgres
+      database-url: "postgresql://postgres:P%40ssw0rd@localhost"
+      database-port: 5432
+      database-versions: >-
+        [ "12.9-alpine", "13.5-alpine", "14.1-alpine" ]
+      database-env: >-
+        { "POSTGRES_DB": "db", "POSTGRES_PASSWORD": "P@ssw0rd" }
+      database-health-cmd: "pg_isready"
   test-mysql:
     needs:
       - lint
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        mysql: [ "5.7", "8.0" ]
-    services:
-      mysql:
-        image: mysql:${{ matrix.mysql }}
-        env:
-          MYSQL_DATABASE: db
-          MYSQL_ROOT_PASSWORD: P@ssw0rd
-        ports:
-          - 3306/tcp
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: ./.github/workflows/shared/test.yml
-        with:
-          database-url: "mysql://root:P%40ssw0rd@localhost:${{ job.services.mysql.ports[3306] }}/db"
+    uses: ./.github/workflows/shared/test.yml@main
+    with:
+      database-image: mysql
+      database-url: "mysql://root:P%40ssw0rd@localhost"
+      database-port: 3306
+      database-versions: >-
+        [ "5.7", "8.0" ]
+      database-env: >-
+        { "MYSQL_DATABASE": "db", "MYSQL_ROOT_PASSWORD": "P@ssw0rd" }
+      database-health-cmd: "mysqladmin ping"

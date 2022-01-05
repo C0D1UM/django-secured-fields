@@ -3,7 +3,22 @@ name: Test
 on:
   workflow_call:
     inputs:
+      database-image:
+        type: string
+        required: true
       database-url:
+        type: string
+        required: true
+      database-port:
+        type: string
+        required: true
+      database-versions:
+        type: string
+        required: true
+      database-env:
+        type: string
+        required: true
+      database-health-cmd:
         type: string
         required: true
 
@@ -14,11 +29,23 @@ jobs:
       matrix:
         python: [ "3.8", "3.9", "3.10" ]
         django: [ "3.1", "3.2" ]
+        db: ${{ fromJSON(inputs.database-versions) }}
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
           # Python 3.10 is compatible with Django 3.2+
           - python: "3.10"
             django: "3.1"
+    services:
+      db:
+        image: ${{ inputs.database-image }}:${{ matrix.db }}
+        env: ${{ fromJSON(inputs.database-options) }}
+        ports:
+          - ${{ inputs.database-port }}/tcp
+        options: >-
+          --health-cmd "${{ inputs.database-health-cmd }}"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -44,9 +71,6 @@ jobs:
         run: |
           poetry install -n
           poetry run pip install --no-input django~=${{ matrix.django }}.0
-      - name: Verify database backend
-        run: |
-          echo "${{ inputs.database-url }}"
       - name: Verify package versions
         run: |
           python -V
@@ -55,6 +79,6 @@ jobs:
         working-directory: ./test_secured_fields
         env:
           DJANGO_SETTINGS_MODULE: config.settings
-          DATABASE_URL: ${{ inputs.data-base-url }}
+          DATABASE_URL: ${{ inputs.data-base-url }}:${{ job.services.db.ports[inputs.database-port] }}/db
         run: |
           poetry run python manage.py test
