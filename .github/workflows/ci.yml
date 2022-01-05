@@ -47,7 +47,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: ./.github/workflows/shared/test.yaml
+      - uses: ./.github/workflows/shared/test.yml
         with:
           database-url: "postgresql://postgres:P%40ssw0rd@localhost:${{ job.services.postgres.ports[5432] }}/db"
   test-mysql:
@@ -71,6 +71,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: ./.github/workflows/shared/test.yaml
+      - uses: ./.github/workflows/shared/test.yml
         with:
           database-url: "mysql://root:P%40ssw0rd@localhost:${{ job.services.mysql.ports[3306] }}/db"
