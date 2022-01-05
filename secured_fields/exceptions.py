@@ -1,0 +1,2 @@
+class DatabaseBackendNotSupported(Exception):
+    pass

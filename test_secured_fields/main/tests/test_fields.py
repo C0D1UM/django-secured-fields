@@ -17,6 +17,8 @@ from freezegun import freeze_time
 import secured_fields
 from main import models
 from main.tests import utils as test_utils
+from secured_fields.enum import DatabaseVendor
+from secured_fields.exceptions import DatabaseBackendNotSupported
 from secured_fields.fernet import get_fernet
 
 
@@ -129,29 +131,55 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
     def test_naive_use_tz(self):
         warnings.simplefilter('ignore', RuntimeWarning)
 
-        self.create_and_assert(
-            datetime.datetime(2021, 12, 31, 23, 59, 3), datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
-        )
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3)
 
-    @test.override_settings(USE_TZ=True)
-    def test_utc_use_tz(self):
-        self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        if connection.vendor == DatabaseVendor.POSTGRESQL:
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
+            self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        elif connection.vendor == DatabaseVendor.MYSQL:
+            # mysql is timezone naive
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
+            self.assert_encrypted_field(b'2021-12-31 23:59:03')
+        else:
+            raise DatabaseBackendNotSupported
+
+    # @test.override_settings(USE_TZ=True)
+    # def test_utc_use_tz(self):
+    #     self.create_and_assert(timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.UTC))
+    #     self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
 
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
-        self.create_and_assert(timezone.localtime(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.timezone('Asia/Bangkok'))
+
+        if connection.vendor == DatabaseVendor.POSTGRESQL:
+            self.create_and_assert(create_value, assert_value=create_value)
+            self.assert_encrypted_field(b'2021-12-31 23:59:03+07:00')
+        elif connection.vendor == DatabaseVendor.MYSQL:
+            # mysql is timezone naive
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 16, 59, 3))
+            self.assert_encrypted_field(b'2021-12-31 16:59:03')
+        else:
+            raise DatabaseBackendNotSupported
 
 
-@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3))
+@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
+@test.override_settings(USE_TZ=True)
 class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
     model_class = models.DateTimeFieldAutoNowModel
 
     def test_simple(self):
-        self.create_and_assert(test_utils.NoValue, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+
+        if connection.vendor == DatabaseVendor.POSTGRESQL:
+            self.create_and_assert(create_value, assert_value=create_value)
+            self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+        elif connection.vendor == DatabaseVendor.MYSQL:
+            # mysql is timezone naive
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
+            self.assert_encrypted_field(b'2021-12-31 23:59:03')
+        else:
+            raise DatabaseBackendNotSupported
 
 
 class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
