@@ -29,7 +29,7 @@ jobs:
   test-pg:
     needs:
       - lint
-    uses: ./.github/workflows/shared/test.yml@${{ github.sha }}
+    uses: ./.github/workflows/shared/test.yml@main
     with:
       database-image: postgres
       database-url: "postgresql://postgres:P%40ssw0rd@localhost"
