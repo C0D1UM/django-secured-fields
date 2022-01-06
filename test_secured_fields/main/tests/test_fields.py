@@ -1,6 +1,7 @@
 import base64
 import datetime
 import decimal
+import hashlib
 import typing
 import warnings
 
@@ -25,31 +26,56 @@ from secured_fields.fernet import get_fernet
 class BaseTestCases:
 
     class BaseFieldTestCase(test.TestCase):
+        _raw_field: bytes = test_utils.NoValue
+
         model_class: typing.Type[Model]
+        searchable = False
 
         def setUp(self) -> None:
             self.model: typing.Optional[Model] = None
 
         def get_raw_field(self):
-            with connection.cursor() as cursor:
-                # pylint: disable=protected-access
-                cursor.execute(f'SELECT field FROM {self.model_class._meta.db_table} LIMIT 1')
-                result = cursor.fetchone()[0]
 
-                # postgres support
-                if isinstance(result, memoryview) and result is not None:
-                    result = result.tobytes()
+            if self._raw_field is test_utils.NoValue:
+                with connection.cursor() as cursor:
+                    # pylint: disable=protected-access
+                    cursor.execute(f'SELECT field FROM {self.model_class._meta.db_table} LIMIT 1')
+                    result = cursor.fetchone()[0]
 
-                return result
+                    # postgres support
+                    if isinstance(result, memoryview) and result is not None:
+                        result = result.tobytes()
+
+                    self._raw_field = result
+
+            return self._raw_field
 
         def assert_is_encrypted_none(self):
             self.assertIsNone(self.get_raw_field())
 
-        def assert_encrypted_field(self, expected_bytes: bytes):
+        def assert_hashed_field(self, expected_bytes: bytes):
+            assert self.searchable, '`searchable` should be True to use this function.'
+
+            field_value = self.get_raw_field()[-32:]
+            hashed_value = hashlib.sha256(expected_bytes).digest()
+
+            self.assertEqual(field_value, hashed_value)
+
+        def assert_encrypted_field(self, expected_bytes: bytes, *, searchable=test_utils.NoValue):
             field_value = self.get_raw_field()
+
+            if searchable is test_utils.NoValue:
+                searchable = self.searchable
+            if searchable:
+                # pylint: disable=protected-access
+                field_value = field_value[:-(32 + len(secured_fields.EncryptedMixin._seperator))]
+
             decrypted_value = get_fernet().decrypt(field_value)
 
             self.assertEqual(decrypted_value, expected_bytes)
+
+            if searchable:
+                self.assert_hashed_field(expected_bytes)
 
         def create_and_assert(self, create_value, assert_value: typing.Any = test_utils.NoValue, **extra_options):
             if create_value is not test_utils.NoValue:
@@ -101,6 +127,15 @@ class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
         # TODO: enforce validation
         model = self.model_class(field='1234567890123456789012345678901')
         self.assertRaises(exceptions.ValidationError, model.full_clean)
+
+
+class SearchableCharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.SearchableCharFieldModel
+    searchable = True
+
+    def test_simple(self):
+        self.create_and_assert('test')
+        self.assert_encrypted_field(b'test')
 
 
 class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -200,14 +235,13 @@ class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
         self.assert_encrypted_field(b'100.23')
 
 
-class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSystemStorage):
-    pass
-
-
 class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
     model_class = models.FileFieldModel
     file_name = 'test.txt'
     file_content = b'test'
+
+    class CustomEncryptedFileStorage(secured_fields.EncryptedStorageMixin, FileSystemStorage):
+        pass
 
     def _test(self):
         model = self.model_class.objects.create(field=self.uploaded_file)
@@ -228,7 +262,9 @@ class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
 
         self.assertFalse(model.field)
 
-    @test.override_settings(ENCRYPTED_FILE_STORAGE='main.tests.test_fields.CustomEncryptedFileStorage')
+    @test.override_settings(
+        ENCRYPTED_FILE_STORAGE='main.tests.test_fields.FileFieldTestCase.CustomEncryptedFileStorage',
+    )
     def test_custom_fs_class(self):
         self._test()
 

@@ -3,6 +3,7 @@ __all__ = [
     'EncryptedStorageMixin',
 ]
 
+import hashlib
 import typing
 from io import BytesIO
 
@@ -17,9 +18,31 @@ class EncryptedMixin(object):
     """Mixin for encrypting/decrypting field value"""
 
     _encrypted_internal_type = 'BinaryField'
+    _seperator = b'$'
 
     internal_type = _encrypted_internal_type
     call_super_from_db_value = False
+
+    def __init__(self, searchable=False, *args, **kwargs):
+        self.searchable = searchable
+
+        kwargs['unique'] = False
+        if self.searchable:
+            kwargs['db_index'] = True
+
+        super().__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+
+        if self.searchable is not False:
+            kwargs['searchable'] = self.searchable
+
+        kwargs.pop('unique', None)
+        if self.searchable:
+            kwargs.pop('db_index', None)
+
+        return name, path, args, kwargs
 
     def get_internal_type(self):
         return self.internal_type
@@ -41,10 +64,13 @@ class EncryptedMixin(object):
             value = super().get_db_prep_save(value, connection)
             value = self.prepare_encryption(value)
 
-        return get_fernet().encrypt(value)
+        encrypted = get_fernet().encrypt(value)
+        if not self.searchable:
+            return encrypted
 
-    # def get_db_prep_value(self, value, connection, prepared=None):  # pylint: disable=unused-argument
-    #     return super().get_db_prep_value(value, connection, prepared=False)
+        # append hashed value
+        hashed = hashlib.sha256(value).digest()
+        return encrypted + self._seperator + hashed
 
     def decrypt(self, value: bytes) -> typing.Union[bytes, str]:
         value = get_fernet().decrypt(value)
@@ -77,8 +103,13 @@ class EncryptedMixin(object):
         if not isinstance(value, bytes):
             return value
 
+        encrypted_value = value
+        if self.searchable:
+            # get only encrypted section
+            encrypted_value = value[:-(32 + len(self._seperator))]
+
         try:
-            value = self.decrypt(value)
+            value = self.decrypt(encrypted_value)
         except fernet.InvalidToken:
             pass
 
