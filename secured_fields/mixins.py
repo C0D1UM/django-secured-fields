@@ -9,8 +9,10 @@ from io import BytesIO
 
 from cryptography import fernet
 from django.core.files import File
+from django.db import connection
 from django.utils.functional import cached_property
 
+from .enum import DatabaseVendor
 from .fernet import get_fernet
 
 
@@ -28,7 +30,9 @@ class EncryptedMixin(object):
 
         kwargs['unique'] = False
         if self.searchable:
-            kwargs['db_index'] = True
+            # NOTE: MySQL does not support index on `longblob` column
+            if connection.vendor != DatabaseVendor.MYSQL:
+                kwargs['db_index'] = True
 
         super().__init__(*args, **kwargs)
 
