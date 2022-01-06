@@ -108,12 +108,22 @@ class BinaryFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFi
         self.assert_encrypted_field(b'test')
 
 
+class SearchableBinaryFieldTestCase(BinaryFieldTestCase):
+    model_class = models.SearchableBinaryFieldModel
+    searchable = True
+
+
 class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.BooleanFieldModel
 
     def test_simple(self):
         self.create_and_assert(True)
         self.assert_encrypted_field(b'True')
+
+
+class SearchableBooleanFieldTestCase(BooleanFieldTestCase):
+    model_class = models.SearchableBooleanFieldModel
+    searchable = True
 
 
 class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -146,6 +156,11 @@ class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
         self.assert_encrypted_field(b'2021-12-31')
 
 
+class SearchableDateFieldTestCase(DateFieldTestCase):
+    model_class = models.SearchableDateFieldModel
+    searchable = True
+
+
 @freeze_time(datetime.datetime(2021, 12, 31))
 class DateFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
     model_class = models.DateFieldAutoNowModel
@@ -174,7 +189,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
             self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
-            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
+            self.create_and_assert(create_value)
             self.assert_encrypted_field(b'2021-12-31 23:59:03')
         else:
             raise DatabaseBackendNotSupported
@@ -184,7 +199,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.UTC)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
-            self.create_and_assert(create_value, assert_value=create_value)
+            self.create_and_assert(create_value)
             self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
@@ -198,7 +213,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.timezone('Asia/Bangkok'))
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
-            self.create_and_assert(create_value, assert_value=create_value)
+            self.create_and_assert(create_value)
             self.assert_encrypted_field(b'2021-12-31 23:59:03+07:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
@@ -217,14 +232,19 @@ class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
         create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
-            self.create_and_assert(create_value, assert_value=create_value)
+            self.create_and_assert(test_utils.NoValue, assert_value=create_value)
             self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
-            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
+            self.create_and_assert(test_utils.NoValue, datetime.datetime(2021, 12, 31, 23, 59, 3))
             self.assert_encrypted_field(b'2021-12-31 23:59:03')
         else:
             raise DatabaseBackendNotSupported
+
+
+class SearchableDateTimeFieldTestCase(DateTimeFieldTestCase):
+    model_class = models.SearchableDateTimeFieldModel
+    searchable = True
 
 
 class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -233,6 +253,11 @@ class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
     def test_simple(self):
         self.create_and_assert(decimal.Decimal('100.23'))
         self.assert_encrypted_field(b'100.23')
+
+
+class SearchableDecimalFieldTestCase(DecimalFieldTestCase):
+    model_class = models.SearchableDecimalFieldModel
+    searchable = True
 
 
 class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
@@ -301,6 +326,11 @@ class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
         self.assert_encrypted_field(b'100')
 
 
+class SearchableIntegerFieldTestCase(IntegerFieldTestCase):
+    model_class = models.SearchableIntegerFieldModel
+    searchable = True
+
+
 class JSONFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.JSONFieldModel
 
@@ -309,9 +339,19 @@ class JSONFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
         self.assert_encrypted_field(b'{"name": "John Doe"}')
 
 
+class SearchableJSONFieldTestCase(JSONFieldTestCase):
+    model_class = models.SearchableJSONFieldModel
+    searchable = True
+
+
 class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.TextFieldModel
 
     def test_simple(self):
         self.create_and_assert('test')
         self.assert_encrypted_field(b'test')
+
+
+class SearchableTextFieldTestCase(TextFieldTestCase):
+    model_class = models.SearchableTextFieldModel
+    searchable = True
