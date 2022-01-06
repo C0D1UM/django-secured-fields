@@ -288,7 +288,7 @@ class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
         self.assertFalse(model.field)
 
     @test.override_settings(
-        ENCRYPTED_FILE_STORAGE='main.tests.test_fields.FileFieldTestCase.CustomEncryptedFileStorage',
+        SECURED_FIELDS_FILE_STORAGE='main.tests.test_fields.FileFieldTestCase.CustomEncryptedFileStorage',
     )
     def test_custom_fs_class(self):
         self._test()
