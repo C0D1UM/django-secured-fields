@@ -25,7 +25,10 @@ class EncryptedBinaryField(mixins.EncryptedMixin, models.BinaryField):
 
 
 class EncryptedBooleanField(mixins.EncryptedMixin, models.BooleanField):
-    pass
+
+    # prevent lint error
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class EncryptedCharField(mixins.EncryptedMixin, models.CharField):
@@ -45,7 +48,10 @@ class EncryptedDecimalField(mixins.EncryptedMixin, models.DecimalField):
 
 
 class EncryptedIntegerField(mixins.EncryptedMixin, models.IntegerField):
-    pass
+
+    # prevent lint error
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class EncryptedJSONField(mixins.EncryptedMixin, models.JSONField):

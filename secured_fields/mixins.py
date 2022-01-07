@@ -26,7 +26,7 @@ class EncryptedMixin(object):
     internal_type = _encrypted_internal_type
     call_super_from_db_value = False
 
-    def __init__(self, searchable=False, *args, **kwargs):
+    def __init__(self, *args, searchable=False, **kwargs):
         self.searchable = searchable
 
         kwargs['unique'] = False
@@ -61,7 +61,7 @@ class EncryptedMixin(object):
     def prepare_encryption(self, value) -> bytes:
         return self.prepare_string(value).encode()
 
-    def get_db_prep_save(self, value, connection):
+    def get_db_prep_save(self, value, connection):  # pylint: disable=redefined-outer-name
         if value is None:
             return value
 
@@ -87,7 +87,7 @@ class EncryptedMixin(object):
 
         return value
 
-    def from_db_value(self, value, expression, connection):  # pylint: disable=unused-argument
+    def from_db_value(self, value, expression, connection):  # pylint: disable=redefined-outer-name
         if value is None:
             return value
 

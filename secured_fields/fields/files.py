@@ -9,7 +9,11 @@ from django.utils.module_loading import import_string
 
 
 def get_encrypted_fs():
-    fs_class_name = getattr(settings, 'SECURED_FIELDS_FILE_STORAGE', 'secured_fields.storage.EncryptedFileSystemStorage')
+    fs_class_name = getattr(
+        settings,
+        'SECURED_FIELDS_FILE_STORAGE',
+        'secured_fields.storage.EncryptedFileSystemStorage',
+    )
     fs_class = import_string(fs_class_name)
 
     from ..mixins import EncryptedStorageMixin  # pylint: disable=import-outside-toplevel
