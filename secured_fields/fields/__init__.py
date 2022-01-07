@@ -32,9 +32,6 @@ class EncryptedCharField(mixins.EncryptedMixin, models.CharField):
     pass
 
 
-EncryptedCharField.register_lookup(lookups.EncryptedExact, 'exact')
-
-
 class EncryptedDateField(mixins.EncryptedMixin, models.DateField):
     pass
 
@@ -57,3 +54,13 @@ class EncryptedJSONField(mixins.EncryptedMixin, models.JSONField):
 
 class EncryptedTextField(mixins.EncryptedMixin, models.TextField):
     pass
+
+
+EncryptedBooleanField.register_lookup(lookups.EncryptedExact, 'exact')
+EncryptedCharField.register_lookup(lookups.EncryptedExact, 'exact')
+EncryptedDateField.register_lookup(lookups.EncryptedExact, 'exact')
+EncryptedDateTimeField.register_lookup(lookups.EncryptedExact, 'exact')
+EncryptedDecimalField.register_lookup(lookups.EncryptedExact, 'exact')
+EncryptedIntegerField.register_lookup(lookups.EncryptedExact, 'exact')
+EncryptedJSONField.register_lookup(lookups.EncryptedJSONExact, 'exact')
+EncryptedTextField.register_lookup(lookups.EncryptedExact, 'exact')

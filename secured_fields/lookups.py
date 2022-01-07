@@ -1,4 +1,5 @@
 import hashlib
+import json
 
 from django.db.models import lookups
 
@@ -15,3 +16,11 @@ class EncryptedExact(lookups.EndsWith):
         params[0] = '%' + mixins.EncryptedMixin.separator + hashed
 
         return sql, params
+
+
+class EncryptedJSONExact(EncryptedExact):
+
+    def get_db_prep_lookup(self, value, connection):
+        value = json.dumps(value)
+
+        return super().get_db_prep_lookup(value, connection)
