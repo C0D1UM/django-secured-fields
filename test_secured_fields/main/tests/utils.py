@@ -7,7 +7,7 @@ class NoValue:
     pass
 
 
-class FileTestMixin(object):
+class FileTestMixin:
     """
     Delete created files after ran test
     Ref: https://dirtycoder.net/2016/02/09/testing-a-model-that-have-an-imagefield/

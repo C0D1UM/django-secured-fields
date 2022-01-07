@@ -17,7 +17,7 @@ from .enum import DatabaseVendor
 from .fernet import get_fernet
 
 
-class EncryptedMixin(object):
+class EncryptedMixin:
     """Mixin for encrypting/decrypting field value"""
 
     _encrypted_internal_type = 'BinaryField'
@@ -131,7 +131,7 @@ class EncryptedMixin(object):
         return results
 
 
-class EncryptedStorageMixin(object):
+class EncryptedStorageMixin:
     """Mixin for encrypt/decrypt file content before saving/after getting from the storage"""
 
     def _open(self, name, mode='rb'):

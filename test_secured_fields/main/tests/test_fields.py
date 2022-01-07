@@ -86,7 +86,7 @@ class BaseTestCases:
 
             self.assertEqual(self.model.field, assert_value if assert_value is not test_utils.NoValue else create_value)
 
-    class NullValueTestMixin(object):
+    class NullValueTestMixin:
 
         def test_null(self):
             self.create_and_assert(None)
