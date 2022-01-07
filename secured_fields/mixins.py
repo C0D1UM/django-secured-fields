@@ -11,13 +11,14 @@ from cryptography import fernet
 from django.conf import settings
 from django.core.files import File
 from django.db import connection
+from django.db.models import Field
 from django.utils.functional import cached_property
 
 from .enum import DatabaseVendor
 from .fernet import get_fernet
 
 
-class EncryptedMixin:
+class EncryptedMixin(Field):
     """Mixin for encrypting/decrypting field value"""
 
     _encrypted_internal_type = 'TextField'
@@ -130,10 +131,15 @@ class EncryptedMixin:
         return results
 
     def get_lookup(self, lookup_name: str):
+        # BinaryField is not supported
         if self.get_original_internal_type() == 'BinaryField':
             return
 
-        allowed_lookups = ['exact']
+        # JSONField not supports `in`
+        if self.get_original_internal_type() == 'JSONField' and lookup_name == 'in':
+            return
+
+        allowed_lookups = ['exact', 'in']
         if lookup_name in allowed_lookups:
             return super().get_lookup(lookup_name)
 
