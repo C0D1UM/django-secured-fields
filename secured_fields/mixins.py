@@ -21,7 +21,7 @@ class EncryptedMixin:
     """Mixin for encrypting/decrypting field value"""
 
     _encrypted_internal_type = 'TextField'
-    _seperator = '$'
+    separator = '$'
 
     internal_type = _encrypted_internal_type
     call_super_from_db_value = False
@@ -78,7 +78,7 @@ class EncryptedMixin:
         # append hashed value
         salt = getattr(settings, 'SECURED_FIELDS_HASH_SALT', '').encode()
         hashed = hashlib.sha256(value + salt).hexdigest()
-        return encrypted + self._seperator + hashed
+        return encrypted + self.separator + hashed
 
     def decrypt(self, value: str) -> typing.Union[bytes, str]:
         value = get_fernet().decrypt(value.encode())
@@ -110,7 +110,7 @@ class EncryptedMixin:
         encrypted_value = value
         if self.searchable:
             # get only encrypted section
-            encrypted_value = value[:-(64 + len(self._seperator))]
+            encrypted_value = value[:-(64 + len(self.separator))]
 
         try:
             value = self.decrypt(encrypted_value)
@@ -128,6 +128,14 @@ class EncryptedMixin:
         self.internal_type = self._encrypted_internal_type
 
         return results
+
+    def get_lookup(self, lookup_name: str):
+        if self.get_original_internal_type() == 'BinaryField':
+            return
+
+        allowed_lookups = ['exact']
+        if lookup_name in allowed_lookups:
+            return super().get_lookup(lookup_name)
 
 
 class EncryptedStorageMixin:

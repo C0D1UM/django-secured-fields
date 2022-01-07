@@ -67,8 +67,7 @@ class BaseTestCases:
             if searchable is test_utils.NoValue:
                 searchable = self.searchable
             if searchable:
-                # pylint: disable=protected-access
-                field_value = field_value[:-(64 + len(secured_fields.EncryptedMixin._seperator))]
+                field_value = field_value[:-(64 + len(secured_fields.EncryptedMixin.separator))]
 
             decrypted_value = get_fernet().decrypt(field_value.encode()).decode()
 

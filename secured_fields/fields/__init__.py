@@ -15,7 +15,7 @@ __all__ = [
 from django.db import models
 
 from .files import *
-from .. import mixins
+from .. import mixins, lookups
 
 
 class EncryptedBinaryField(mixins.EncryptedMixin, models.BinaryField):
@@ -30,6 +30,9 @@ class EncryptedBooleanField(mixins.EncryptedMixin, models.BooleanField):
 
 class EncryptedCharField(mixins.EncryptedMixin, models.CharField):
     pass
+
+
+EncryptedCharField.register_lookup(lookups.EncryptedExact, 'exact')
 
 
 class EncryptedDateField(mixins.EncryptedMixin, models.DateField):
