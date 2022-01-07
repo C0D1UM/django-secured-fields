@@ -16,7 +16,7 @@ class BooleanFieldModel(models.Model):
 
 
 class SearchableBooleanFieldModel(models.Model):
-    field = secured_fields.EncryptedBooleanField(null=True, searchable=True)
+    field = secured_fields.EncryptedBooleanField(null=True, searchable=True)  # pylint: disable=unexpected-keyword-arg
 
 
 class CharFieldModel(models.Model):
@@ -76,7 +76,7 @@ class IntegerFieldModel(models.Model):
 
 
 class SearchableIntegerFieldModel(models.Model):
-    field = secured_fields.EncryptedIntegerField(null=True, searchable=True)
+    field = secured_fields.EncryptedIntegerField(null=True, searchable=True)  # pylint: disable=unexpected-keyword-arg
 
 
 class JSONFieldModel(models.Model):
