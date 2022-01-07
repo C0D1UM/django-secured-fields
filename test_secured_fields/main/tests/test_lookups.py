@@ -1,7 +1,6 @@
 import datetime
 import decimal
 import typing
-import warnings
 
 import pytz
 from django import test
