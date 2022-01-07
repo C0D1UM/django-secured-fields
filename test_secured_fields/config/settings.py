@@ -135,4 +135,5 @@ MEDIA_ROOT = str(BASE_DIR.parent / 'media')
 # Secure fields
 
 SECURED_FIELDS_KEY = 'IQZa4YrTPq74RuBRiCSufZO27tOLQwmF3Q7KZn4YTps='  # WARNING: this key is intended to use for testing
+SECURED_FIELDS_HASH_SALT = ''
 SECURED_FIELDS_FILE_STORAGE = 'secured_fields.storage.EncryptedFileSystemStorage'

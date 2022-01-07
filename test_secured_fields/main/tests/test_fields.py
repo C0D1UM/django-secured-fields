@@ -53,15 +53,15 @@ class BaseTestCases:
         def assert_is_encrypted_none(self):
             self.assertIsNone(self.get_raw_field())
 
-        def assert_hashed_field(self, expected_bytes: bytes):
+        def assert_hashed_field(self, expected_bytes: bytes, *, salt=''):
             assert self.searchable, '`searchable` should be True to use this function.'
 
             field_value = self.get_raw_field()[-32:]
-            hashed_value = hashlib.sha256(expected_bytes).digest()
+            hashed_value = hashlib.sha256(expected_bytes + salt.encode()).digest()
 
             self.assertEqual(field_value, hashed_value)
 
-        def assert_encrypted_field(self, expected_bytes: bytes, *, searchable=test_utils.NoValue):
+        def assert_encrypted_field(self, expected_bytes: bytes, *, searchable=test_utils.NoValue, salt=''):
             field_value = self.get_raw_field()
 
             if searchable is test_utils.NoValue:
@@ -72,7 +72,7 @@ class BaseTestCases:
 
             decrypted_value = get_fernet().decrypt(field_value)
 
-            self.assertEqual(decrypted_value, expected_bytes)
+            self.assertEqual(decrypted_value, expected_bytes, salt)
 
             if searchable:
                 self.assert_hashed_field(expected_bytes)
@@ -112,6 +112,11 @@ class SearchableBinaryFieldTestCase(BinaryFieldTestCase):
     model_class = models.SearchableBinaryFieldModel
     searchable = True
 
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(b'test')
+        self.assert_hashed_field(b'test', salt='test')
+
 
 class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.BooleanFieldModel
@@ -124,6 +129,11 @@ class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
 class SearchableBooleanFieldTestCase(BooleanFieldTestCase):
     model_class = models.SearchableBooleanFieldModel
     searchable = True
+
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(True)
+        self.assert_hashed_field(b'True', salt='test')
 
 
 class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -147,6 +157,11 @@ class SearchableCharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCase
         self.create_and_assert('test')
         self.assert_encrypted_field(b'test')
 
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert('test')
+        self.assert_hashed_field(b'test', salt='test')
+
 
 class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.DateFieldModel
@@ -159,6 +174,11 @@ class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
 class SearchableDateFieldTestCase(DateFieldTestCase):
     model_class = models.SearchableDateFieldModel
     searchable = True
+
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(datetime.date(2021, 12, 31))
+        self.assert_hashed_field(b'2021-12-31', salt='test')
 
 
 @freeze_time(datetime.datetime(2021, 12, 31))
@@ -246,6 +266,20 @@ class SearchableDateTimeFieldTestCase(DateTimeFieldTestCase):
     model_class = models.SearchableDateTimeFieldModel
     searchable = True
 
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+
+        if connection.vendor == DatabaseVendor.POSTGRESQL:
+            self.create_and_assert(create_value)
+            self.assert_hashed_field(b'2021-12-31 23:59:03+00:00', salt='test')
+        elif connection.vendor == DatabaseVendor.MYSQL:
+            # mysql is timezone naive
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
+            self.assert_hashed_field(b'2021-12-31 23:59:03', salt='test')
+        else:
+            raise DatabaseBackendNotSupported
+
 
 class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.DecimalFieldModel
@@ -258,6 +292,11 @@ class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
 class SearchableDecimalFieldTestCase(DecimalFieldTestCase):
     model_class = models.SearchableDecimalFieldModel
     searchable = True
+
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(decimal.Decimal('100.23'))
+        self.assert_hashed_field(b'100.23', salt='test')
 
 
 class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
@@ -330,6 +369,11 @@ class SearchableIntegerFieldTestCase(IntegerFieldTestCase):
     model_class = models.SearchableIntegerFieldModel
     searchable = True
 
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(100)
+        self.assert_hashed_field(b'100', salt='test')
+
 
 class JSONFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.JSONFieldModel
@@ -343,6 +387,11 @@ class SearchableJSONFieldTestCase(JSONFieldTestCase):
     model_class = models.SearchableJSONFieldModel
     searchable = True
 
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert({'name': 'John Doe'})
+        self.assert_hashed_field(b'{"name": "John Doe"}', salt='test')
+
 
 class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.TextFieldModel
@@ -355,3 +404,8 @@ class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
 class SearchableTextFieldTestCase(TextFieldTestCase):
     model_class = models.SearchableTextFieldModel
     searchable = True
+
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert('test')
+        self.assert_hashed_field(b'test', salt='test')

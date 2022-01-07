@@ -8,6 +8,7 @@ import typing
 from io import BytesIO
 
 from cryptography import fernet
+from django.conf import settings
 from django.core.files import File
 from django.db import connection
 from django.utils.functional import cached_property
@@ -73,7 +74,8 @@ class EncryptedMixin(object):
             return encrypted
 
         # append hashed value
-        hashed = hashlib.sha256(value).digest()
+        salt = getattr(settings, 'SECURED_FIELDS_HASH_SALT', '').encode()
+        hashed = hashlib.sha256(value + salt).digest()
         return encrypted + self._seperator + hashed
 
     def decrypt(self, value: bytes) -> typing.Union[bytes, str]:
