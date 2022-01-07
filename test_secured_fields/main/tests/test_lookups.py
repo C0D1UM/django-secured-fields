@@ -37,6 +37,7 @@ class EncryptedExactTestCase(test.TestCase):
         assert_value = create_value
 
         if connection.vendor == DatabaseVendor.MYSQL:
+            # mysql is timezone naive
             assert_value = assert_value.replace(tzinfo=None)
 
         self.create_and_assert(models.SearchableDateTimeFieldModel, create_value, assert_value)
