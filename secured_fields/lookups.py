@@ -28,7 +28,7 @@ class EncryptedJSONExact(EncryptedExact):
 
 class EncryptedIn(lookups.In):
 
-    def get_rhs_op(self, connection, rhs):
+    def get_rhs_op(self, connection, rhs):  # pylint: disable=unused-argument
         return lookups.EndsWith(self.lhs, '%s').get_rhs_op(connection, '%s')
 
     def as_sql(self, compiler, connection):
