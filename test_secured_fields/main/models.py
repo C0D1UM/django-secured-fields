@@ -7,10 +7,6 @@ class BinaryFieldModel(models.Model):
     field = secured_fields.EncryptedBinaryField(null=True)
 
 
-class SearchableBinaryFieldModel(models.Model):
-    field = secured_fields.EncryptedBinaryField(null=True, searchable=True)
-
-
 class BooleanFieldModel(models.Model):
     field = secured_fields.EncryptedBooleanField(null=True)
 

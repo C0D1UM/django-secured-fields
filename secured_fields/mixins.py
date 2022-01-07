@@ -20,13 +20,15 @@ from .fernet import get_fernet
 class EncryptedMixin:
     """Mixin for encrypting/decrypting field value"""
 
-    _encrypted_internal_type = 'BinaryField'
-    _seperator = b'$'
+    _encrypted_internal_type = 'TextField'
+    _seperator = '$'
 
     internal_type = _encrypted_internal_type
     call_super_from_db_value = False
 
     def __init__(self, *args, searchable=False, **kwargs):
+        if self.get_original_internal_type() == 'BinaryField' and searchable:
+            raise NotImplementedError('`BinaryField` with `searchable=True` is not supported yet')
         self.searchable = searchable
 
         kwargs['unique'] = False
@@ -65,24 +67,24 @@ class EncryptedMixin:
         if value is None:
             return value
 
-        if self.get_original_internal_type() != 'BinaryField':
+        if not isinstance(value, bytes):
             value = super().get_db_prep_save(value, connection)
             value = self.prepare_encryption(value)
 
-        encrypted = get_fernet().encrypt(value)
+        encrypted = get_fernet().encrypt(value).decode()
         if not self.searchable:
             return encrypted
 
         # append hashed value
         salt = getattr(settings, 'SECURED_FIELDS_HASH_SALT', '').encode()
-        hashed = hashlib.sha256(value + salt).digest()
+        hashed = hashlib.sha256(value + salt).hexdigest()
         return encrypted + self._seperator + hashed
 
-    def decrypt(self, value: bytes) -> typing.Union[bytes, str]:
-        value = get_fernet().decrypt(value)
+    def decrypt(self, value: str) -> typing.Union[bytes, str]:
+        value = get_fernet().decrypt(value.encode())
 
         # convert to str if not expecting bytes
-        if super().get_internal_type() != 'BinaryField':
+        if self.get_original_internal_type() != 'BinaryField':
             value = value.decode()
 
         return value
@@ -90,10 +92,6 @@ class EncryptedMixin:
     def from_db_value(self, value, expression, connection):  # pylint: disable=redefined-outer-name
         if value is None:
             return value
-
-        # postgres support
-        if isinstance(value, memoryview):
-            value = value.tobytes()
 
         value = self.to_python(value)
 
@@ -106,17 +104,18 @@ class EncryptedMixin:
         if value is None:
             return value
 
-        if not isinstance(value, bytes):
+        if not isinstance(value, str):
             return value
 
         encrypted_value = value
         if self.searchable:
             # get only encrypted section
-            encrypted_value = value[:-(32 + len(self._seperator))]
+            encrypted_value = value[:-(64 + len(self._seperator))]
 
         try:
             value = self.decrypt(encrypted_value)
         except fernet.InvalidToken:
+            # not encrypted
             pass
 
         return super().to_python(value)

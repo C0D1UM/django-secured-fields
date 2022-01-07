@@ -34,7 +34,7 @@ class BaseTestCases:
         def setUp(self) -> None:
             self.model: typing.Optional[Model] = None
 
-        def get_raw_field(self):
+        def get_raw_field(self) -> typing.Union[bytes, str]:
 
             if self._raw_field is test_utils.NoValue:
                 with connection.cursor() as cursor:
@@ -43,7 +43,7 @@ class BaseTestCases:
                     result = cursor.fetchone()[0]
 
                     # postgres support
-                    if isinstance(result, memoryview) and result is not None:
+                    if isinstance(result, memoryview):
                         result = result.tobytes()
 
                     self._raw_field = result
@@ -53,29 +53,35 @@ class BaseTestCases:
         def assert_is_encrypted_none(self):
             self.assertIsNone(self.get_raw_field())
 
-        def assert_hashed_field(self, expected_bytes: bytes, *, salt=''):
-            assert self.searchable, '`searchable` should be True to use this function.'
+        def assert_hashed_field(self, expected_str: str, *, salt=''):
+            assert self.searchable, '`searchable` should be True to use this function'
 
-            field_value = self.get_raw_field()[-32:]
-            hashed_value = hashlib.sha256(expected_bytes + salt.encode()).digest()
+            field_value = self.get_raw_field()[-64:]
+            hashed_value = hashlib.sha256(expected_str.encode() + salt.encode()).hexdigest()
 
             self.assertEqual(field_value, hashed_value)
 
-        def assert_encrypted_field(self, expected_bytes: bytes, *, searchable=test_utils.NoValue, salt=''):
+        def assert_encrypted_str_field(self, expected_str: str, *, searchable=test_utils.NoValue, salt=''):
             field_value = self.get_raw_field()
 
             if searchable is test_utils.NoValue:
                 searchable = self.searchable
             if searchable:
                 # pylint: disable=protected-access
-                field_value = field_value[:-(32 + len(secured_fields.EncryptedMixin._seperator))]
+                field_value = field_value[:-(64 + len(secured_fields.EncryptedMixin._seperator))]
 
-            decrypted_value = get_fernet().decrypt(field_value)
+            decrypted_value = get_fernet().decrypt(field_value.encode()).decode()
 
-            self.assertEqual(decrypted_value, expected_bytes, salt)
+            self.assertEqual(decrypted_value, expected_str, salt)
 
             if searchable:
-                self.assert_hashed_field(expected_bytes)
+                self.assert_hashed_field(expected_str)
+
+        def assert_encrypted_bytes_field(self, expected_bytes: bytes):
+            field_value = self.get_raw_field()
+            decrypted_value = get_fernet().decrypt(field_value.encode())
+
+            self.assertEqual(decrypted_value, expected_bytes)
 
         def create_and_assert(self, create_value, assert_value: typing.Any = test_utils.NoValue, **extra_options):
             if create_value is not test_utils.NoValue:
@@ -105,17 +111,17 @@ class BinaryFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFi
 
     def test_simple(self):
         self.create_and_assert(b'test')
-        self.assert_encrypted_field(b'test')
+        self.assert_encrypted_bytes_field(b'test')
 
 
-class SearchableBinaryFieldTestCase(BinaryFieldTestCase):
-    model_class = models.SearchableBinaryFieldModel
-    searchable = True
-
-    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
-    def test_with_salt(self):
-        self.create_and_assert(b'test')
-        self.assert_hashed_field(b'test', salt='test')
+# class SearchableBinaryFieldTestCase(BinaryFieldTestCase):
+#     model_class = models.SearchableBinaryFieldModel
+#     searchable = True
+#
+#     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+#     def test_with_salt(self):
+#         self.create_and_assert(b'test')
+#         self.assert_hashed_field(b'test', salt='test')
 
 
 class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -123,7 +129,7 @@ class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
 
     def test_simple(self):
         self.create_and_assert(True)
-        self.assert_encrypted_field(b'True')
+        self.assert_encrypted_str_field('True')
 
 
 class SearchableBooleanFieldTestCase(BooleanFieldTestCase):
@@ -133,7 +139,7 @@ class SearchableBooleanFieldTestCase(BooleanFieldTestCase):
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert(True)
-        self.assert_hashed_field(b'True', salt='test')
+        self.assert_hashed_field('True', salt='test')
 
 
 class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -141,7 +147,7 @@ class CharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
 
     def test_simple(self):
         self.create_and_assert('test')
-        self.assert_encrypted_field(b'test')
+        self.assert_encrypted_str_field('test')
 
     def test_exceed_max_length(self):
         # TODO: enforce validation
@@ -155,12 +161,12 @@ class SearchableCharFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCase
 
     def test_simple(self):
         self.create_and_assert('test')
-        self.assert_encrypted_field(b'test')
+        self.assert_encrypted_str_field('test')
 
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert('test')
-        self.assert_hashed_field(b'test', salt='test')
+        self.assert_hashed_field('test', salt='test')
 
 
 class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -168,7 +174,7 @@ class DateFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
 
     def test_simple(self):
         self.create_and_assert(datetime.date(2021, 12, 31))
-        self.assert_encrypted_field(b'2021-12-31')
+        self.assert_encrypted_str_field('2021-12-31')
 
 
 class SearchableDateFieldTestCase(DateFieldTestCase):
@@ -178,7 +184,7 @@ class SearchableDateFieldTestCase(DateFieldTestCase):
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert(datetime.date(2021, 12, 31))
-        self.assert_hashed_field(b'2021-12-31', salt='test')
+        self.assert_hashed_field('2021-12-31', salt='test')
 
 
 @freeze_time(datetime.datetime(2021, 12, 31))
@@ -187,7 +193,7 @@ class DateFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
 
     def test_simple(self):
         self.create_and_assert(test_utils.NoValue, datetime.date(2021, 12, 31))
-        self.assert_encrypted_field(b'2021-12-31')
+        self.assert_encrypted_str_field('2021-12-31')
 
 
 class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -196,7 +202,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
     @test.override_settings(USE_TZ=False)
     def test_naive_no_use_tz(self):
         self.create_and_assert(datetime.datetime(2021, 12, 31, 23, 59, 3))
-        self.assert_encrypted_field(b'2021-12-31 23:59:03')
+        self.assert_encrypted_str_field('2021-12-31 23:59:03')
 
     @test.override_settings(USE_TZ=True)
     def test_naive_use_tz(self):
@@ -206,11 +212,11 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
-            self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
             self.create_and_assert(create_value)
-            self.assert_encrypted_field(b'2021-12-31 23:59:03')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03')
         else:
             raise DatabaseBackendNotSupported
 
@@ -220,11 +226,11 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
-            self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
-            self.assert_encrypted_field(b'2021-12-31 23:59:03')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03')
         else:
             raise DatabaseBackendNotSupported
 
@@ -234,11 +240,11 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
-            self.assert_encrypted_field(b'2021-12-31 23:59:03+07:00')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03+07:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 16, 59, 3))
-            self.assert_encrypted_field(b'2021-12-31 16:59:03')
+            self.assert_encrypted_str_field('2021-12-31 16:59:03')
         else:
             raise DatabaseBackendNotSupported
 
@@ -253,11 +259,11 @@ class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(test_utils.NoValue, assert_value=create_value)
-            self.assert_encrypted_field(b'2021-12-31 23:59:03+00:00')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
             self.create_and_assert(test_utils.NoValue, datetime.datetime(2021, 12, 31, 23, 59, 3))
-            self.assert_encrypted_field(b'2021-12-31 23:59:03')
+            self.assert_encrypted_str_field('2021-12-31 23:59:03')
         else:
             raise DatabaseBackendNotSupported
 
@@ -272,11 +278,11 @@ class SearchableDateTimeFieldTestCase(DateTimeFieldTestCase):
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
-            self.assert_hashed_field(b'2021-12-31 23:59:03+00:00', salt='test')
+            self.assert_hashed_field('2021-12-31 23:59:03+00:00', salt='test')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
-            self.assert_hashed_field(b'2021-12-31 23:59:03', salt='test')
+            self.assert_hashed_field('2021-12-31 23:59:03', salt='test')
         else:
             raise DatabaseBackendNotSupported
 
@@ -286,7 +292,7 @@ class DecimalFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
 
     def test_simple(self):
         self.create_and_assert(decimal.Decimal('100.23'))
-        self.assert_encrypted_field(b'100.23')
+        self.assert_encrypted_str_field('100.23')
 
 
 class SearchableDecimalFieldTestCase(DecimalFieldTestCase):
@@ -296,7 +302,7 @@ class SearchableDecimalFieldTestCase(DecimalFieldTestCase):
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert(decimal.Decimal('100.23'))
-        self.assert_hashed_field(b'100.23', salt='test')
+        self.assert_hashed_field('100.23', salt='test')
 
 
 class FileFieldTestCase(BaseTestCases.BaseFileFieldTestCase):
@@ -362,7 +368,7 @@ class IntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseF
 
     def test_simple(self):
         self.create_and_assert(100)
-        self.assert_encrypted_field(b'100')
+        self.assert_encrypted_str_field('100')
 
 
 class SearchableIntegerFieldTestCase(IntegerFieldTestCase):
@@ -372,7 +378,7 @@ class SearchableIntegerFieldTestCase(IntegerFieldTestCase):
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert(100)
-        self.assert_hashed_field(b'100', salt='test')
+        self.assert_hashed_field('100', salt='test')
 
 
 class JSONFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -380,7 +386,7 @@ class JSONFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
 
     def test_simple(self):
         self.create_and_assert({'name': 'John Doe'})
-        self.assert_encrypted_field(b'{"name": "John Doe"}')
+        self.assert_encrypted_str_field('{"name": "John Doe"}')
 
 
 class SearchableJSONFieldTestCase(JSONFieldTestCase):
@@ -390,7 +396,7 @@ class SearchableJSONFieldTestCase(JSONFieldTestCase):
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert({'name': 'John Doe'})
-        self.assert_hashed_field(b'{"name": "John Doe"}', salt='test')
+        self.assert_hashed_field('{"name": "John Doe"}', salt='test')
 
 
 class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
@@ -398,7 +404,7 @@ class TextFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFiel
 
     def test_simple(self):
         self.create_and_assert('test')
-        self.assert_encrypted_field(b'test')
+        self.assert_encrypted_str_field('test')
 
 
 class SearchableTextFieldTestCase(TextFieldTestCase):
@@ -408,4 +414,4 @@ class SearchableTextFieldTestCase(TextFieldTestCase):
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
         self.create_and_assert('test')
-        self.assert_hashed_field(b'test', salt='test')
+        self.assert_hashed_field('test', salt='test')
