@@ -36,6 +36,11 @@ jobs:
           # Python 3.10 is compatible with Django 3.2+
           - python: "3.10"
             django: "3.1"
+        # newest matrix set which will upload to codecov
+        include:
+          - python: "3.10"
+            django: "3.2"
+            codecov: "true"
     services:
       db:
         image: ${{ inputs.database-image }}:${{ matrix.db }}
@@ -86,3 +91,9 @@ jobs:
           poetry run coverage combine
           poetry run coverage report -m
           poetry run coverage xml
+      - name: Upload coverage to Codecov
+        if: matrix.codecov == 'true'
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./test_secured_fields
+          fail_ci_if_error: true
