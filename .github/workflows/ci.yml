@@ -46,6 +46,7 @@ jobs:
       database-env: >-
         { "POSTGRES_DB": "db", "POSTGRES_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "pg_isready"
+      database-version-codecov: "14.1-alpine"  # newest
   test-mysql:
     needs:
       - lint
@@ -59,3 +60,4 @@ jobs:
       database-env: >-
         { "MYSQL_DATABASE": "db", "MYSQL_ROOT_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "mysqladmin ping"
+      database-version-codecov: "8.0"  # newest
