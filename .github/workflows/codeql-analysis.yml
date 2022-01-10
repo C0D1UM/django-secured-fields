@@ -17,12 +17,16 @@ on:
     paths:
       - "secured_fields/**/*"
       - "test_secured_fields/**/*"
+      - "pyproject.toml"
+      - "poetry.lock"
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
     paths:
       - "secured_fields/**/*"
       - "test_secured_fields/**/*"
+      - "pyproject.toml"
+      - "poetry.lock"
 
 jobs:
   analyze:

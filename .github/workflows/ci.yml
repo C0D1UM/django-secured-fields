@@ -6,11 +6,15 @@ on:
     paths:
       - "secured_fields/**/*"
       - "test_secured_fields/**/*"
+      - "pyproject.toml"
+      - "poetry.lock"
   pull_request:
     branches: [ main ]
     paths:
       - "secured_fields/**/*"
       - "test_secured_fields/**/*"
+      - "pyproject.toml"
+      - "poetry.lock"
   workflow_dispatch:
 
 jobs:
