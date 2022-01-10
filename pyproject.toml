@@ -27,6 +27,7 @@ freezegun = "^1.1"
 django-environ = "^0.8"
 Pillow = "^9.0"
 django-extensions = "^3.0"
+coverage = "^6"
 
 [tool.poetry-dynamic-versioning]
 enable = true
