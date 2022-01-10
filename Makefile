@@ -13,7 +13,6 @@ lint:
 	cd test_secured_fields && poetry run coverage erase
 
 .coverage-report:
-	cd test_secured_fields && poetry run coverage combine
 	cd test_secured_fields && poetry run coverage report -m
 
 test-pg: .coverage-erase .test-pg .coverage-report
