@@ -95,5 +95,6 @@ jobs:
         if: matrix.codecov == 'true'
         uses: codecov/codecov-action@v2
         with:
+          name: ${{ inputs.database-image }}
           directory: ./test_secured_fields
           fail_ci_if_error: true
