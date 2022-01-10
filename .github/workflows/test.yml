@@ -82,4 +82,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings
           DATABASE_URL: ${{ inputs.database-url }}:${{ job.services.db.ports[inputs.database-port] }}/db
         run: |
-          poetry run python manage.py test
+          poetry run coverage run manage.py test --parallel
+          poetry run coverage combine
+          poetry run coverage report -m
+          poetry run coverage xml
