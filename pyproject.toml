@@ -28,7 +28,7 @@ django-environ = "^0.8"
 Pillow = "^9.0"
 django-extensions = "^3.0"
 coverage = "^6"
-tblib = "^1.7.0"
+"backports.zoneinfo" = { version = "^0.2", python = "~3.8" }
 
 [tool.poetry-dynamic-versioning]
 enable = true
