@@ -3,8 +3,15 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - secured_fields
+      - test_secured_fields
   pull_request:
     branches: [ main ]
+    paths:
+      - secured_fields
+      - test_secured_fields
+  workflow_dispatch:
 
 jobs:
   lint:
