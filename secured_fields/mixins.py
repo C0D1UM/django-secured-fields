@@ -70,7 +70,8 @@ class EncryptedMixin(Field):
 
         if not isinstance(value, bytes):
             value = super().get_db_prep_save(value, connection)
-            value = self.prepare_encryption(value)
+
+        value = self.prepare_encryption(value)
 
         encrypted = get_fernet().encrypt(value).decode()
         if not self.searchable:
