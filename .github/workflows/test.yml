@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [ "3.8", "3.9", "3.10" ]
-        django: [ "3.1", "3.2" ]
+        django: [ "3.1", "3.2", "4.0" ]
         db: ${{ fromJSON(inputs.database-versions) }}
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
@@ -42,7 +42,7 @@ jobs:
         # newest matrix set which will upload to codecov
         include:
           - python: "3.10"
-            django: "3.2"
+            django: "4.0"
             db: ${{ inputs.database-version-codecov }}
             codecov: "true"
     services:

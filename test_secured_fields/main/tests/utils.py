@@ -1,6 +1,14 @@
 import shutil
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 from django.conf import settings
+
+
+TZ_UTC = ZoneInfo('UTC')
+TZ_BANGKOK = ZoneInfo('Asia/Bangkok')
 
 
 class NoValue:

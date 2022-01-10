@@ -5,7 +5,6 @@ import hashlib
 import typing
 import warnings
 
-import pytz
 from django import test
 from django.core import exceptions
 from django.core.files.storage import FileSystemStorage
@@ -210,7 +209,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         create_value = datetime.datetime(2021, 12, 31, 23, 59, 3)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
-            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
+            self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC))
             self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
         elif connection.vendor == DatabaseVendor.MYSQL:
             # mysql is timezone naive
@@ -221,7 +220,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
 
     @test.override_settings(USE_TZ=True)
     def test_utc_use_tz(self):
-        create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.UTC)
+        create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), test_utils.TZ_UTC)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
@@ -235,7 +234,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
 
     @test.override_settings(USE_TZ=True)
     def test_bangkok_use_tz(self):
-        create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), pytz.timezone('Asia/Bangkok'))
+        create_value = timezone.make_aware(datetime.datetime(2021, 12, 31, 23, 59, 3), test_utils.TZ_BANGKOK)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
@@ -248,13 +247,13 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
             raise DatabaseBackendNotSupported
 
 
-@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC))
+@freeze_time(datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC))
 @test.override_settings(USE_TZ=True)
 class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
     model_class = models.DateTimeFieldAutoNowModel
 
     def test_simple(self):
-        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(test_utils.NoValue, assert_value=create_value)
@@ -273,7 +272,7 @@ class SearchableDateTimeFieldTestCase(DateTimeFieldTestCase):
 
     @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
     def test_with_salt(self):
-        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC)
 
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)

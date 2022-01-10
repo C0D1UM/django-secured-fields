@@ -2,7 +2,6 @@ import datetime
 import decimal
 import typing
 
-import pytz
 from django import test
 from django.db import connection
 
@@ -33,7 +32,7 @@ class EncryptedExactTestCase(test.TestCase):
         self.create_and_assert(models.SearchableDateFieldModel, datetime.date(2021, 12, 31))
 
     def test_datetime_field(self):
-        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC)
         assert_value = create_value
 
         if connection.vendor == DatabaseVendor.MYSQL:
@@ -81,10 +80,10 @@ class EncryptedInTestCase(test.TestCase):
         )
 
     def test_datetime_field(self):
-        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC)
+        create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC)
         assert_value = [
-            datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=pytz.UTC),
-            datetime.datetime(2021, 12, 31, 23, 50, 3, tzinfo=pytz.UTC),
+            datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC),
+            datetime.datetime(2021, 12, 31, 23, 50, 3, tzinfo=test_utils.TZ_UTC),
         ]
 
         if connection.vendor == DatabaseVendor.MYSQL:
