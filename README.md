@@ -1,13 +1,13 @@
 # Django Secured Fields
 
-![GitHub](https://img.shields.io/github/license/C0D1UM/django-secured-fields)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/C0D1UM/django-secured-fields/CI)
+[![GitHub](https://img.shields.io/github/license/C0D1UM/django-secured-fields)](https://github.com/C0D1UM/django-secured-fields/blob/main/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/C0D1UM/django-secured-fields/CI)](https://github.com/C0D1UM/django-secured-fields/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/C0D1UM/django-secured-fields/branch/main/graph/badge.svg?token=PN19DJ3SDF)](https://codecov.io/gh/C0D1UM/django-secured-fields)
-![PyPI](https://img.shields.io/pypi/v/django-secured-fields)  
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-secured-fields)
-![Django Version](https://img.shields.io/badge/django-3.1%20%7C%203.2-blue)
-![PostgreSQL Version](https://img.shields.io/badge/postgres-12.9%20%7C%2013.5%20%7C%2014.1-blue)
-![MySQL Version](https://img.shields.io/badge/mysql-5.7%20%7C%208.0-blue)
+[![PyPI](https://img.shields.io/pypi/v/django-secured-fields)](https://pypi.org/project/django-secured-fields/)  
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-secured-fields)](https://github.com/C0D1UM/django-secured-fields)
+[![Django Version](https://img.shields.io/badge/django-3.1%20%7C%203.2-blue)](https://github.com/C0D1UM/django-secured-fields)
+[![PostgreSQL Version](https://img.shields.io/badge/postgres-12.9%20%7C%2013.5%20%7C%2014.1-blue)](https://github.com/C0D1UM/django-secured-fields)
+[![MySQL Version](https://img.shields.io/badge/mysql-5.7%20%7C%208.0-blue)](https://github.com/C0D1UM/django-secured-fields)
 
 Django encrypted fields with search enabled.
 
