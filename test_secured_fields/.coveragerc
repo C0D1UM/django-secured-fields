@@ -1,6 +1,5 @@
 [run]
 source=../secured_fields
-concurrency=multiprocessing
 omit =
     */apps.py
 
