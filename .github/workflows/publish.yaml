@@ -34,3 +34,6 @@ jobs:
         poetry publish -n --build
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        generateReleaseNotes: true
