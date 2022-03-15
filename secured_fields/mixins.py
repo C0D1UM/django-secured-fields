@@ -12,7 +12,7 @@ from django.db import connection
 from django.db.models import Field
 from django.utils.functional import cached_property
 
-from . import utils
+from . import exceptions, utils
 from .enum import DatabaseVendor
 from .fernet import get_fernet
 
@@ -131,15 +131,17 @@ class EncryptedMixin(Field):
     def get_lookup(self, lookup_name: str):
         # BinaryField is not supported
         if self.get_original_internal_type() == 'BinaryField':
-            return
+            raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
         # JSONField not supports `in`
         if self.get_original_internal_type() == 'JSONField' and lookup_name == 'in':
-            return
+            raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
         allowed_lookups = ['exact', 'in']
         if lookup_name in allowed_lookups:
             return super().get_lookup(lookup_name)
+
+        raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
 
 class EncryptedStorageMixin:

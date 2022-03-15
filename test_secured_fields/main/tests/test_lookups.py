@@ -7,10 +7,20 @@ from django.db import connection
 
 from main import models
 from main.tests import utils as test_utils
+from secured_fields import exceptions
 from secured_fields.enum import DatabaseVendor
 
 
-class EncryptedExactTestCase(test.TestCase):
+class BaseEncryptedLookupTestCase(test.TestCase):
+
+    def create_and_assert(self, model, create_value, assert_value: typing.Any = test_utils.NoValue):
+        raise NotImplementedError
+
+    def assert_no_lookup(self, model, assert_value: typing.Any):
+        raise NotImplementedError
+
+
+class EncryptedExactTestCase(BaseEncryptedLookupTestCase):
 
     def create_and_assert(self, model, create_value, assert_value: typing.Any = test_utils.NoValue):
         created_pk = model.objects.create(field=create_value).pk
@@ -21,6 +31,12 @@ class EncryptedExactTestCase(test.TestCase):
 
         self.assertIsNotNone(model)
         self.assertEqual(model.pk, created_pk)
+
+    def assert_no_lookup(self, model, assert_value: typing.Any):
+        self.assertRaises(exceptions.LookupNotSupported, model.objects.filter, field=assert_value)
+
+    def test_binary_field(self):
+        self.assert_no_lookup(models.BinaryFieldModel, b'test')
 
     def test_boolean_field(self):
         self.create_and_assert(models.SearchableBooleanFieldModel, True)
@@ -54,7 +70,7 @@ class EncryptedExactTestCase(test.TestCase):
         self.create_and_assert(models.SearchableTextFieldModel, 'test')
 
 
-class EncryptedInTestCase(test.TestCase):
+class EncryptedInTestCase(BaseEncryptedLookupTestCase):
 
     def create_and_assert(self, model, create_value, assert_value):
         created_pk = model.objects.create(field=create_value).pk
@@ -65,6 +81,12 @@ class EncryptedInTestCase(test.TestCase):
 
         self.assertIsNotNone(model)
         self.assertEqual(model.pk, created_pk)
+
+    def assert_no_lookup(self, model, assert_value: typing.Any):
+        self.assertRaises(exceptions.LookupNotSupported, model.objects.filter, field__in=assert_value)
+
+    def test_binary_field(self):
+        self.assert_no_lookup(models.BinaryFieldModel, b'test')
 
     def test_boolean_field(self):
         self.create_and_assert(models.SearchableBooleanFieldModel, True, [True, False])
@@ -101,6 +123,9 @@ class EncryptedInTestCase(test.TestCase):
 
     def test_integer_field(self):
         self.create_and_assert(models.SearchableIntegerFieldModel, 100, [100, 200])
+
+    def test_json_field(self):
+        self.assert_no_lookup(models.SearchableJSONFieldModel, [{'test': 'test'}, {'john': 'doe'}])
 
     def test_text_field(self):
         self.create_and_assert(models.SearchableTextFieldModel, 'test', ['test', 'user'])
