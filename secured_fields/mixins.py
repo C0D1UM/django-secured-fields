@@ -33,7 +33,7 @@ class EncryptedMixin(Field):
 
         kwargs['unique'] = False
         if self.searchable:
-            # NOTE: MySQL does not support index on `longblob` column
+            # NOTE: MySQL does not support index on `longtext` column
             if connection.vendor != DatabaseVendor.MYSQL:
                 kwargs['db_index'] = True
 
