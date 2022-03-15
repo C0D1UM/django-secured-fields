@@ -20,6 +20,7 @@ from main.tests import utils as test_utils
 from secured_fields.enum import DatabaseVendor
 from secured_fields.exceptions import DatabaseBackendNotSupported
 from secured_fields.fernet import get_fernet
+from secured_fields.utils import hash_with_salt
 
 
 class BaseTestCases:
@@ -56,7 +57,7 @@ class BaseTestCases:
             assert self.searchable, '`searchable` should be True to use this function'
 
             field_value = self.get_raw_field()[-64:]
-            hashed_value = hashlib.sha256(expected_str.encode() + salt.encode()).hexdigest()
+            hashed_value = hash_with_salt(expected_str)
 
             self.assertEqual(field_value, hashed_value)
 

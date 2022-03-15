@@ -3,17 +3,16 @@ __all__ = [
     'EncryptedStorageMixin',
 ]
 
-import hashlib
 import typing
 from io import BytesIO
 
 from cryptography import fernet
-from django.conf import settings
 from django.core.files import File
 from django.db import connection
 from django.db.models import Field
 from django.utils.functional import cached_property
 
+from . import utils
 from .enum import DatabaseVendor
 from .fernet import get_fernet
 
@@ -78,9 +77,7 @@ class EncryptedMixin(Field):
             return encrypted
 
         # append hashed value
-        salt = getattr(settings, 'SECURED_FIELDS_HASH_SALT', '').encode()
-        hashed = hashlib.sha256(value + salt).hexdigest()
-        return encrypted + self.separator + hashed
+        return encrypted + self.separator + utils.hash_with_salt(value)
 
     def decrypt(self, value: str) -> typing.Union[bytes, str]:
         value = get_fernet().decrypt(value.encode())
