@@ -14,7 +14,7 @@ Django encrypted fields with search enabled.
 ## Features
 
 - Automatically encrypt/decrypt field value using [cryptography](https://github.com/pyca/cryptography)'s [Fernet](https://cryptography.io/en/latest/fernet)
-- Built-in search lookup on the encrypted fields from [hashlib](https://docs.python.org/3/library/hashlib.html)'s _SHA-256_ hash value. `in` lookup also supported.
+- Built-in search lookup on the encrypted fields from [hashlib](https://docs.python.org/3/library/hashlib.html)'s _SHA-256_ hash value. `in` and `isnull` lookup also supported.
 - Supports most of available Django fields including `BinaryField`, `JSONField`, and `FileField`.
 
 ## Installation
