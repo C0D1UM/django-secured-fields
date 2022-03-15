@@ -100,9 +100,6 @@ class EncryptedMixin(Field):
         return value
 
     def to_python(self, value):
-        if value is None:
-            return value
-
         if not isinstance(value, str):
             return value
 
