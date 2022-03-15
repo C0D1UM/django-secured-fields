@@ -9,6 +9,9 @@ lint:
 .test-mysql:
 	cd test_secured_fields && DATABASE_URL=mysql://root:P%40ssw0rd@127.0.0.1:3306/db poetry run coverage run manage.py test
 
+.test-sqlite:
+	cd test_secured_fields && DATABASE_URL=sqlite:///db.sqlite3 poetry run coverage run manage.py test
+
 .coverage-erase:
 	cd test_secured_fields && poetry run coverage erase
 
@@ -18,6 +21,8 @@ lint:
 test-pg: .coverage-erase .test-pg .coverage-report
 
 test-mysql: .coverage-erase .test-mysql .coverage-report
+
+test-sqlite: .coverage-erase .test-sqlite .coverage-report
 
 yapf:
 	poetry run yapf -ipr secured_fields test_secured_fields
