@@ -9,6 +9,7 @@ from django import test
 from django.core import exceptions
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.conf import settings
 from django.db import connection
 from django.db.models import Model
 from django.utils import timezone
@@ -57,7 +58,7 @@ class BaseTestCases:
             assert self.searchable, '`searchable` should be True to use this function'
 
             field_value = self.get_raw_field()[-64:]
-            hashed_value = hash_with_salt(expected_str)
+            hashed_value = hashlib.sha256(expected_str.encode() + salt.encode()).hexdigest()
 
             self.assertEqual(field_value, hashed_value)
 

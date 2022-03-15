@@ -20,6 +20,7 @@ class BaseEncryptedLookupTestCase(test.TestCase):
         raise NotImplementedError
 
 
+@test.override_settings(SECURED_FIELDS_HASH_SALT='test')
 class EncryptedExactTestCase(BaseEncryptedLookupTestCase):
 
     def create_and_assert(self, model, create_value, assert_value: typing.Any = test_utils.NoValue):
@@ -70,6 +71,7 @@ class EncryptedExactTestCase(BaseEncryptedLookupTestCase):
         self.create_and_assert(models.SearchableTextFieldModel, 'test')
 
 
+@test.override_settings(SECURED_FIELDS_HASH_SALT='test')
 class EncryptedInTestCase(BaseEncryptedLookupTestCase):
 
     def create_and_assert(self, model, create_value, assert_value):
