@@ -65,3 +65,16 @@ jobs:
         { "MYSQL_DATABASE": "db", "MYSQL_ROOT_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "mysqladmin ping"
       database-version-codecov: "8.0"  # newest
+  test-sqlite:
+    needs:
+      - lint
+    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    with:
+      database-image: spaster/alpine-sleep
+      database-url: "sqlite:///db.sqlite3"
+      database-port: 80
+      database-versions: >-
+        [ "latest" ]
+      database-env: "{}"
+      database-health-cmd: "true"
+      database-version-codecov: "latest"  # newest

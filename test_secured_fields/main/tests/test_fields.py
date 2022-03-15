@@ -211,8 +211,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC))
             self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
-        elif connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        elif connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             self.create_and_assert(create_value)
             self.assert_encrypted_str_field('2021-12-31 23:59:03')
         else:
@@ -225,8 +224,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
             self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
-        elif connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        elif connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
             self.assert_encrypted_str_field('2021-12-31 23:59:03')
         else:
@@ -239,8 +237,7 @@ class DateTimeFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.Base
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
             self.assert_encrypted_str_field('2021-12-31 23:59:03+07:00')
-        elif connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        elif connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 16, 59, 3))
             self.assert_encrypted_str_field('2021-12-31 16:59:03')
         else:
@@ -258,8 +255,7 @@ class DateTimeFieldWithAutoNowTestCase(BaseTestCases.BaseFieldTestCase):
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(test_utils.NoValue, assert_value=create_value)
             self.assert_encrypted_str_field('2021-12-31 23:59:03+00:00')
-        elif connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        elif connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             self.create_and_assert(test_utils.NoValue, datetime.datetime(2021, 12, 31, 23, 59, 3))
             self.assert_encrypted_str_field('2021-12-31 23:59:03')
         else:
@@ -277,8 +273,7 @@ class SearchableDateTimeFieldTestCase(DateTimeFieldTestCase):
         if connection.vendor == DatabaseVendor.POSTGRESQL:
             self.create_and_assert(create_value)
             self.assert_hashed_field('2021-12-31 23:59:03+00:00', salt='test')
-        elif connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        elif connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             self.create_and_assert(create_value, datetime.datetime(2021, 12, 31, 23, 59, 3))
             self.assert_hashed_field('2021-12-31 23:59:03', salt='test')
         else:

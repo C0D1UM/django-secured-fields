@@ -43,8 +43,7 @@ class EncryptedExactLookupTestCase(test.TestCase):
         create_value = datetime.datetime(2021, 12, 31, 23, 59, 3, tzinfo=test_utils.TZ_UTC)
         assert_value = create_value
 
-        if connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        if connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             assert_value = assert_value.replace(tzinfo=None)
 
         self.create_and_assert(models.SearchableDateTimeFieldModel, create_value, assert_value)
@@ -101,8 +100,7 @@ class EncryptedInLookupTestCase(test.TestCase):
             datetime.datetime(2021, 12, 31, 23, 50, 3, tzinfo=test_utils.TZ_UTC),
         ]
 
-        if connection.vendor == DatabaseVendor.MYSQL:
-            # mysql is timezone naive
+        if connection.vendor in [DatabaseVendor.MYSQL, DatabaseVendor.SQLITE]:
             assert_value = list(map(lambda x: x.replace(tzinfo=None), assert_value))
 
         self.create_and_assert(models.SearchableDateTimeFieldModel, create_value, assert_value)
