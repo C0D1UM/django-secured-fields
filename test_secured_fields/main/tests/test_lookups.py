@@ -11,17 +11,8 @@ from secured_fields import exceptions
 from secured_fields.enum import DatabaseVendor
 
 
-class BaseEncryptedLookupTestCase(test.TestCase):
-
-    def create_and_assert(self, model, create_value, assert_value: typing.Any = test_utils.NoValue):
-        raise NotImplementedError
-
-    def assert_no_lookup(self, model, assert_value: typing.Any):
-        raise NotImplementedError
-
-
 @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
-class EncryptedExactTestCase(BaseEncryptedLookupTestCase):
+class EncryptedExactLookupTestCase(test.TestCase):
 
     def create_and_assert(self, model, create_value, assert_value: typing.Any = test_utils.NoValue):
         created_pk = model.objects.create(field=create_value).pk
@@ -72,7 +63,7 @@ class EncryptedExactTestCase(BaseEncryptedLookupTestCase):
 
 
 @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
-class EncryptedInTestCase(BaseEncryptedLookupTestCase):
+class EncryptedInLookupTestCase(test.TestCase):
 
     def create_and_assert(self, model, create_value, assert_value):
         created_pk = model.objects.create(field=create_value).pk
@@ -131,6 +122,44 @@ class EncryptedInTestCase(BaseEncryptedLookupTestCase):
 
     def test_text_field(self):
         self.create_and_assert(models.SearchableTextFieldModel, 'test', ['test', 'user'])
+
+
+@test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+class IsNullLookupTestCase(test.TestCase):
+
+    def create_and_assert(self, model):
+        created_pk = model.objects.create(field=None).pk
+        model = model.objects.filter(field__isnull=True).first()
+
+        self.assertIsNotNone(model)
+        self.assertEqual(model.pk, created_pk)
+
+    def test_binary_field(self):
+        self.create_and_assert(models.BinaryFieldModel)
+
+    def test_boolean_field(self):
+        self.create_and_assert(models.SearchableBooleanFieldModel)
+
+    def test_char_field(self):
+        self.create_and_assert(models.SearchableCharFieldModel)
+
+    def test_date_field(self):
+        self.create_and_assert(models.SearchableDateFieldModel)
+
+    def test_datetime_field(self):
+        self.create_and_assert(models.SearchableDateTimeFieldModel)
+
+    def test_decimal_field(self):
+        self.create_and_assert(models.SearchableDecimalFieldModel)
+
+    def test_integer_field(self):
+        self.create_and_assert(models.SearchableIntegerFieldModel)
+
+    def test_json_field(self):
+        self.create_and_assert(models.SearchableJSONFieldModel)
+
+    def test_text_field(self):
+        self.create_and_assert(models.SearchableTextFieldModel)
 
 
 class UnsupportedLookupTestCase(test.TestCase):

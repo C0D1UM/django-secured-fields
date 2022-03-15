@@ -126,15 +126,15 @@ class EncryptedMixin(Field):
         return results
 
     def get_lookup(self, lookup_name: str):
-        # BinaryField is not supported
-        if self.get_original_internal_type() == 'BinaryField':
+        # BinaryField is not supported (except `isnull`)
+        if self.get_original_internal_type() == 'BinaryField' and lookup_name != 'isnull':
             raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
         # JSONField not supports `in`
         if self.get_original_internal_type() == 'JSONField' and lookup_name == 'in':
             raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
-        allowed_lookups = ['exact', 'in']
+        allowed_lookups = ['exact', 'in', 'isnull']
         if lookup_name in allowed_lookups:
             return super().get_lookup(lookup_name)
 
