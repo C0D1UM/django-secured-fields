@@ -75,5 +75,6 @@ jobs:
       database-port: 80
       database-versions: >-
         [ "latest" ]
+      database-env: "{}"
       database-health-cmd: "true"
       database-version-codecov: "latest"  # newest
