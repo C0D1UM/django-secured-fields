@@ -8,6 +8,7 @@
 [![Django Version](https://img.shields.io/badge/django-3.1%20%7C%203.2%20%7C%204.0-blue)](https://github.com/C0D1UM/django-secured-fields)
 [![PostgreSQL Version](https://img.shields.io/badge/postgres-12.9%20%7C%2013.5%20%7C%2014.1-blue)](https://github.com/C0D1UM/django-secured-fields)
 [![MySQL Version](https://img.shields.io/badge/mysql-5.7%20%7C%208.0-blue)](https://github.com/C0D1UM/django-secured-fields)
+[![SQLite Version](https://img.shields.io/badge/sqlite-3-blue)](https://github.com/C0D1UM/django-secured-fields)
 
 Django encrypted fields with search enabled.
 
