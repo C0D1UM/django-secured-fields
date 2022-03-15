@@ -9,7 +9,6 @@ from django import test
 from django.core import exceptions
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.conf import settings
 from django.db import connection
 from django.db.models import Model
 from django.utils import timezone
@@ -21,7 +20,6 @@ from main.tests import utils as test_utils
 from secured_fields.enum import DatabaseVendor
 from secured_fields.exceptions import DatabaseBackendNotSupported
 from secured_fields.fernet import get_fernet
-from secured_fields.utils import hash_with_salt
 
 
 class BaseTestCases:

@@ -136,4 +136,8 @@ class EncryptedInTestCase(BaseEncryptedLookupTestCase):
 class UnsupportedLookupTestCase(test.TestCase):
 
     def test_char_field_contains(self):
-        self.assertRaises(exceptions.LookupNotSupported, models.SearchableCharFieldModel.objects.filter, field__contains='test')
+        self.assertRaises(
+            exceptions.LookupNotSupported,
+            models.SearchableCharFieldModel.objects.filter,
+            field__contains='test',
+        )
