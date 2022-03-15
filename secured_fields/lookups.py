@@ -1,9 +1,8 @@
-import hashlib
 import json
 
 from django.db.models import lookups
 
-from . import mixins
+from . import mixins, utils
 
 
 class EncryptedExact(lookups.EndsWith):
@@ -12,7 +11,7 @@ class EncryptedExact(lookups.EndsWith):
         sql, params = super().as_sql(compiler, connection)
 
         # search using hash
-        hashed = hashlib.sha256(params[0][1:].encode()).hexdigest()
+        hashed = utils.hash_with_salt(params[0][1:])
         params[0] = '%' + mixins.EncryptedMixin.separator + hashed
 
         return sql, params
@@ -39,7 +38,7 @@ class EncryptedIn(lookups.In):
 
         # search using hash for each item
         params = [
-            '%' + mixins.EncryptedMixin.separator + hashlib.sha256(str(param).encode()).hexdigest()
+            '%' + mixins.EncryptedMixin.separator + utils.hash_with_salt(str(param))
             for param in params
         ]
 

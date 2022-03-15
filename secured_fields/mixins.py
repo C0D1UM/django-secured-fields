@@ -3,17 +3,16 @@ __all__ = [
     'EncryptedStorageMixin',
 ]
 
-import hashlib
 import typing
 from io import BytesIO
 
 from cryptography import fernet
-from django.conf import settings
 from django.core.files import File
 from django.db import connection
 from django.db.models import Field
 from django.utils.functional import cached_property
 
+from . import exceptions, utils
 from .enum import DatabaseVendor
 from .fernet import get_fernet
 
@@ -78,9 +77,7 @@ class EncryptedMixin(Field):
             return encrypted
 
         # append hashed value
-        salt = getattr(settings, 'SECURED_FIELDS_HASH_SALT', '').encode()
-        hashed = hashlib.sha256(value + salt).hexdigest()
-        return encrypted + self.separator + hashed
+        return encrypted + self.separator + utils.hash_with_salt(value)
 
     def decrypt(self, value: str) -> typing.Union[bytes, str]:
         value = get_fernet().decrypt(value.encode())
@@ -103,9 +100,6 @@ class EncryptedMixin(Field):
         return value
 
     def to_python(self, value):
-        if value is None:
-            return value
-
         if not isinstance(value, str):
             return value
 
@@ -134,15 +128,17 @@ class EncryptedMixin(Field):
     def get_lookup(self, lookup_name: str):
         # BinaryField is not supported
         if self.get_original_internal_type() == 'BinaryField':
-            return
+            raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
         # JSONField not supports `in`
         if self.get_original_internal_type() == 'JSONField' and lookup_name == 'in':
-            return
+            raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
         allowed_lookups = ['exact', 'in']
         if lookup_name in allowed_lookups:
             return super().get_lookup(lookup_name)
+
+        raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
 
 class EncryptedStorageMixin:
