@@ -1,4 +1,4 @@
-default: fix-lint lint test
+default: yapf lint test
 
 lint:
 	poetry run pylint secured_fields test_secured_fields
