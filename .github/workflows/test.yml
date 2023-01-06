@@ -32,17 +32,22 @@ jobs:
       fail-fast: false
       matrix:
         python: [ "3.8", "3.9", "3.10" ]
-        django: [ "3.1", "3.2", "4.0" ]
+        django: [ "3.1", "3.2", "4.0", "4.1" ]
         db: ${{ fromJSON(inputs.database-versions) }}
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
           # Python 3.10 is compatible with Django 3.2+
           - python: "3.10"
             django: "3.1"
+          # Django 4.0+ requires zoneinfo from Python 3.9+
+          - python: "3.8"
+            django: "4.0"
+          - python: "3.8"
+            django: "4.1"
         # newest matrix set which will upload to codecov
         include:
           - python: "3.10"
-            django: "4.0"
+            django: "4.1"
             db: ${{ inputs.database-version-codecov }}
             codecov: "true"
     services:
@@ -79,8 +84,8 @@ jobs:
           poetry-version: "1.1.12"
       - name: Install dependencies
         run: |
+          poetry add -n django@~${{ matrix.django }}
           poetry install -n
-          poetry add -n django@~${{ matrix.django }}.0
       - name: Verify package versions
         run: |
           python -V
