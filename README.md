@@ -117,7 +117,7 @@ b'test'
 
 ### `EncryptedMixin`
 
-If you have a field which does not supported by the package, you can use `EncryptedMixin` to enable encryption and search functionality for that custom field.
+If you have a field which is not supported by the package, you can use `EncryptedMixin` to enable encryption and search functionality for that custom field.
 
 ```python
 import secured_fields
