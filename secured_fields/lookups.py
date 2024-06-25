@@ -35,6 +35,7 @@ class EncryptedIn(lookups.In):
 
         # reformat to multiple OR condition instead
         sql += (' OR ' + sql) * (len(params) - 1)
+        sql = f'({sql})'
 
         # search using hash for each item
         params = [
