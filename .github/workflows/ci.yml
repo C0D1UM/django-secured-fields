@@ -51,6 +51,8 @@ jobs:
         { "POSTGRES_DB": "db", "POSTGRES_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "pg_isready"
       database-version-codecov: "14.1-alpine"  # newest
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test-mysql:
     needs:
       - lint
@@ -65,6 +67,8 @@ jobs:
         { "MYSQL_DATABASE": "db", "MYSQL_ROOT_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "mysqladmin ping"
       database-version-codecov: "8.0"  # newest
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test-sqlite:
     needs:
       - lint
@@ -78,3 +82,5 @@ jobs:
       database-env: "{}"
       database-health-cmd: "true"
       database-version-codecov: "latest"  # newest
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

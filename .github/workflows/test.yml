@@ -24,6 +24,9 @@ on:
       database-version-codecov:
         type: string
         required: true
+    secrets:
+      CODECOV_TOKEN:
+        required: true
 
 jobs:
   test:
@@ -103,8 +106,7 @@ jobs:
         if: matrix.codecov == 'true'
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.codecov-token }}
           name: ${{ inputs.database-image }}
           directory: ./test_secured_fields
           fail_ci_if_error: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
