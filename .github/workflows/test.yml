@@ -101,8 +101,10 @@ jobs:
           poetry run coverage xml
       - name: Upload coverage to Codecov
         if: matrix.codecov == 'true'
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           name: ${{ inputs.database-image }}
           directory: ./test_secured_fields
           fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
