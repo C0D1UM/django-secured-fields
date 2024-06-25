@@ -106,7 +106,7 @@ jobs:
         if: matrix.codecov == 'true'
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.codecov-token }}
+          token: ${{ secrets.CODECOV_TOKEN }}
           name: ${{ inputs.database-image }}
           directory: ./test_secured_fields
           fail_ci_if_error: true
