@@ -150,9 +150,11 @@ class EncryptedStorageMixin:
         return File(BytesIO(decrypted_content))
 
     def _save(self, name, content):
+        pos = content.tell()
+        content.seek(0)
         encrypted_content = get_fernet().encrypt(content.read())
         content.seek(0)
         content.write(encrypted_content)
-        content.seek(0)
+        content.seek(pos)
 
         return super()._save(name, content)
