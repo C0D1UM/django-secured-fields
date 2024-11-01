@@ -41,13 +41,20 @@ pip install django-secured-fields
    HASH_SALT: 500d492e
    ```
 
-3. Put generated key and hash salt in settings
+3. Put generated key(s) and hash salt in settings
 
    ```python
    # settings.py
 
    SECURED_FIELDS_KEY = 'TtY8MAeXuhdKDd1HfGUwim-vQ8H7fXyRQ9J8pTi_-lg='
-   SECURED_FIELDS_HASH_SALT = '500d492e'  # optional
+   # or multiple keys for rotation
+   SECURED_FIELDS_KEY = [
+       'TtY8MAeXuhdKDd1HfGUwim-vQ8H7fXyRQ9J8pTi_-lg=',
+       '...',
+   ]
+
+   # optional
+   SECURED_FILDS_HASH_SALT = '500d492e'
    ```
 
 ## Usage
@@ -88,7 +95,7 @@ id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=Tru
 
 | Key | Required | Default | Description |
 | --- | -------- | ------- | ----------- |
-| `SECURED_FIELDS_KEY` | Yes | | Key for using in encryption/decryption with Fernet. Usually generated from `python manage.py generate_key`. |
+| `SECURED_FIELDS_KEY` | Yes | | Key(s) for using in encryption/decryption with Fernet. Usually generated from `python manage.py generate_key`. For rotation keys, use a list of keys instead (see [MultiFernet](https://cryptography.io/en/latest/fernet/#cryptography.fernet.MultiFernet)). |
 | `SECURED_FIELDS_HASH_SALT` | No | `''` | Salt to append after the field value before hashing. Usually generated from `python manage.py generate_key`. |
 | `SECURED_FIELDS_FILE_STORAGE` | No | `'secured_fields.storage.EncryptedFileSystemStorage'` | File storage class used for storing encrypted file/image fields. See [EncryptedStorageMixin](#encryptedstoragemixin) |
 
@@ -114,6 +121,22 @@ b'gAAAAABh2_Ry_thxLTuFFXeMc9hNttah82979JPuMSjnssRB0DmbgwdtEU5dapBgISOST_a_egDc66
 > get_fernet().decrypt(encrypted_data)
 b'test'
 ```
+
+### Rotate Keys
+
+```python
+> from secured_fields.fernet import get_fernet
+
+> encrypted_data = get_fernet().encrypt(b'test')
+> encrypted_data
+b'gAAAAABh2_Ry_thxLTuFFXeMc9hNttah82979JPuMSjnssRB0DmbgwdtEU5dapBgISOST_a_egDc66EG_ZtVu_EqF_69djJwuA=='
+
+> rotated_encrypted_data = get_fernet().rotate(encrypted_data)
+> get_fernet().decrypt(rotated_encrypted_data)
+b'test'
+```
+
+See more details in [MultiFernet.rotate](https://cryptography.io/en/latest/fernet/#cryptography.fernet.MultiFernet.rotate).
 
 ### `EncryptedMixin`
 
