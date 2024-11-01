@@ -180,7 +180,7 @@ make lint
 ### Testing
 
 ```bash
-make test
+make test-pg  # or make test-mysql, make test-sqlite
 ```
 
 ### Fix Formatting
