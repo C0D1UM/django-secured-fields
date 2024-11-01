@@ -3,7 +3,7 @@ import typing
 from cryptography import fernet
 from django.conf import settings
 
-fernet_client: typing.Optional[fernet.Fernet] = None
+fernet_client: typing.Optional[fernet.MultiFernet] = None
 
 
 def get_fernet():
@@ -13,6 +13,12 @@ def get_fernet():
         fernet_key = getattr(settings, 'SECURED_FIELDS_KEY', None)
         assert fernet_key is not None, '`SECURED_FIELDS_KEY` is required when using django-secured-fields'
 
-        fernet_client = fernet.Fernet(fernet_key)
+        if isinstance(fernet_key, str):
+            fernet_keys = [fernet_key]
+        else:
+            fernet_keys = fernet_key
+
+        fernet_instances = [fernet.Fernet(key) for key in fernet_keys]
+        fernet_client = fernet.MultiFernet(fernet_instances)
 
     return fernet_client
