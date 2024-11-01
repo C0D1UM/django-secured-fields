@@ -2,10 +2,17 @@ from cryptography.fernet import Fernet
 
 from django import test
 
+from secured_fields import fernet as fernet_module
 from secured_fields.fernet import get_fernet
 
 
 class FernetTestCase(test.TestCase):
+    def setUp(self):
+        fernet_module.fernet_client = None
+
+    def tearDown(self) -> None:
+        fernet_module.fernet_client = None
+
     def test_simple(self):
         fernet = get_fernet()
         encrypted = fernet.encrypt(b'test')
