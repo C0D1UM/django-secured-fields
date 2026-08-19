@@ -1,10 +1,19 @@
 from django.db import models
 
 import secured_fields
+from main import fields
 
 
 class BinaryFieldModel(models.Model):
     field = secured_fields.EncryptedBinaryField(null=True)
+
+
+class BigIntegerFieldModel(models.Model):
+    field = fields.EncryptedBigIntegerField(null=True)
+
+
+class SearchableBigIntegerFieldModel(models.Model):
+    field = fields.EncryptedBigIntegerField(null=True, searchable=True)
 
 
 class BooleanFieldModel(models.Model):
@@ -89,3 +98,11 @@ class TextFieldModel(models.Model):
 
 class SearchableTextFieldModel(models.Model):
     field = secured_fields.EncryptedTextField(null=True, searchable=True)
+
+
+class UUIDFieldModel(models.Model):
+    field = fields.EncryptedUUIDField(null=True)
+
+
+class SearchableUUIDFieldModel(models.Model):
+    field = fields.EncryptedUUIDField(null=True, searchable=True)

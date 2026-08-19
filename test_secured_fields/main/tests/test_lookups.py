@@ -30,6 +30,9 @@ class EncryptedExactLookupTestCase(test.TestCase):
     def test_binary_field(self):
         self.assert_no_lookup(models.BinaryFieldModel, b'test')
 
+    def test_big_integer_field(self):
+        self.create_and_assert(models.SearchableBigIntegerFieldModel, 2**40)
+
     def test_boolean_field(self):
         self.create_and_assert(models.SearchableBooleanFieldModel, True)
 
@@ -58,6 +61,11 @@ class EncryptedExactLookupTestCase(test.TestCase):
     def test_decimal_field(self):
         self.create_and_assert(models.SearchableDecimalFieldModel, decimal.Decimal('100.23'))
 
+    def test_decimal_field_with_fewer_decimal_places(self):
+        """The value has to be prepared the same way it was when saved (`100.2` -> `100.20`)"""
+
+        self.create_and_assert(models.SearchableDecimalFieldModel, decimal.Decimal('100.2'))
+
     def test_integer_field(self):
         self.create_and_assert(models.SearchableIntegerFieldModel, 100)
 
@@ -72,6 +80,9 @@ class EncryptedExactLookupTestCase(test.TestCase):
 
     def test_text_field_with_like_wildcards(self):
         self.create_and_assert(models.SearchableTextFieldModel, 'under_score 100%')
+
+    def test_uuid_field(self):
+        self.create_and_assert(models.SearchableUUIDFieldModel, test_utils.UUID_1)
 
 
 @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
@@ -92,6 +103,9 @@ class EncryptedInLookupTestCase(test.TestCase):
 
     def test_binary_field(self):
         self.assert_no_lookup(models.BinaryFieldModel, b'test')
+
+    def test_big_integer_field(self):
+        self.create_and_assert(models.SearchableBigIntegerFieldModel, 2**40, [2**40, 2**41])
 
     def test_boolean_field(self):
         self.create_and_assert(models.SearchableBooleanFieldModel, True, [True, False])
@@ -132,6 +146,15 @@ class EncryptedInLookupTestCase(test.TestCase):
             [decimal.Decimal('100.23'), decimal.Decimal('10.2')],
         )
 
+    def test_decimal_field_with_fewer_decimal_places(self):
+        """Each value has to be prepared the same way it was when saved (`100.2` -> `100.20`)"""
+
+        self.create_and_assert(
+            models.SearchableDecimalFieldModel,
+            decimal.Decimal('100.2'),
+            [decimal.Decimal('100.2'), decimal.Decimal('10.2')],
+        )
+
     def test_integer_field(self):
         self.create_and_assert(models.SearchableIntegerFieldModel, 100, [100, 200])
 
@@ -140,6 +163,13 @@ class EncryptedInLookupTestCase(test.TestCase):
 
     def test_text_field(self):
         self.create_and_assert(models.SearchableTextFieldModel, 'test', ['test', 'user'])
+
+    def test_uuid_field(self):
+        self.create_and_assert(
+            models.SearchableUUIDFieldModel,
+            test_utils.UUID_1,
+            [test_utils.UUID_1, test_utils.UUID_2],
+        )
 
 
 @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
@@ -154,6 +184,9 @@ class IsNullLookupTestCase(test.TestCase):
 
     def test_binary_field(self):
         self.create_and_assert(models.BinaryFieldModel)
+
+    def test_big_integer_field(self):
+        self.create_and_assert(models.SearchableBigIntegerFieldModel)
 
     def test_boolean_field(self):
         self.create_and_assert(models.SearchableBooleanFieldModel)
@@ -178,6 +211,9 @@ class IsNullLookupTestCase(test.TestCase):
 
     def test_text_field(self):
         self.create_and_assert(models.SearchableTextFieldModel)
+
+    def test_uuid_field(self):
+        self.create_and_assert(models.SearchableUUIDFieldModel)
 
 
 class UnsupportedLookupTestCase(test.TestCase):

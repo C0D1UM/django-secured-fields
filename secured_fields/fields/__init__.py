@@ -12,6 +12,8 @@ __all__ = [
     'EncryptedTextField',
 ]
 
+import json
+
 from django.db import models
 
 from .files import *
@@ -50,6 +52,13 @@ class EncryptedIntegerField(mixins.EncryptedMixin, models.IntegerField):
 
 class EncryptedJSONField(mixins.EncryptedMixin, models.JSONField):
     call_super_from_db_value = True
+
+    def prepare_db_value(self, value, connection):  # pylint: disable=unused-argument
+        # NOTE: `JSONField.get_db_prep_value()` delegates to `connection.ops.adapt_json_value()`,
+        #       which returns a driver-specific wrapper (`Jsonb`) on PostgreSQL instead of a JSON
+        #       string. The value is encoded here so the encrypted payload is always the JSON text
+        #       regardless of the database backend.
+        return json.dumps(value, cls=self.encoder)
 
 
 class EncryptedTextField(mixins.EncryptedMixin, models.TextField):

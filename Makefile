@@ -40,10 +40,10 @@ generate-key:
 	cd test_secured_fields && poetry run python manage.py generate_key
 
 up-db:
-	cd test_secured_fields && docker-compose up -d $(filter-out $@,$(MAKECMDGOALS))
+	cd test_secured_fields && docker compose up -d $(filter-out $@,$(MAKECMDGOALS))
 
 down-db:
-	cd test_secured_fields && docker-compose down
+	cd test_secured_fields && docker compose down
 
 %:
 	@:
