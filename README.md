@@ -111,7 +111,29 @@ id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=Tru
 
 | Name | Type | Required | Default | Description |
 | ---- | ---- | -------- | ------- | ----------- |
-| `searchable` | `bool` | No | `False` | Enable search function |
+| `searchable` | `bool` | No | `False` | Enable search function. `exact`/`in` lookups are only available when this is `True`; on a non-searchable field they raise `LookupNotSupported`. |
+
+#### Changing `searchable` on a field with existing records
+
+Existing records stay readable after changing `searchable`, but they keep the storage format
+of the previous flag until they are re-saved:
+
+- `False` → `True`: existing records do not have a hashed section yet, so `exact`/`in` lookups will not match them.
+- `True` → `False`: existing records still carry the old hashed section — a deterministic fingerprint of the value — until they are re-saved.
+
+After changing the flag (and running `makemigrations`/`migrate`, since the database index changes),
+re-save the affected records to convert them to the new format. Do this in a data migration that runs
+**after** the generated `AlterField` operation — the historical model must already carry the new
+`searchable` value, otherwise the records are silently re-written in the old format:
+
+```python
+def resave_records(apps, schema_editor):
+    model = apps.get_model('myapp', 'MyModel')
+    model.objects.bulk_update(model.objects.all(), ['my_field'], batch_size=1000)
+```
+
+`bulk_update` re-encrypts through the same path as `save()` but batches the queries, and — unlike
+re-saving each record — does not overwrite `auto_now` date/datetime fields with the migration run time.
 
 ### Encryption
 
@@ -178,7 +200,7 @@ class EncryptedMinioMediaStorage(
 - `in` lookup on `JSONField` is not available
 - Large files are not performance-friendly at the moment (see [#2](https://github.com/C0D1UM/django-secured-fields/issues/2))
 - Search on `BinaryField` does not supported at the moment (see [#6](https://github.com/C0D1UM/django-secured-fields/issues/6))
-- Changing `searchable` value in a field with the records in the database is not supported (see [#7](https://github.com/C0D1UM/django-secured-fields/issues/7))
+- Changing `searchable` on a field with existing records requires re-saving the records to make search results consistent (see [Changing `searchable` on a field with existing records](#changing-searchable-on-a-field-with-existing-records))
 
 ## Development
 
