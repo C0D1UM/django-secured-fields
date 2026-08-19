@@ -113,6 +113,23 @@ id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=Tru
 | ---- | ---- | -------- | ------- | ----------- |
 | `searchable` | `bool` | No | `False` | Enable search function |
 
+#### Changing `searchable` on a field with existing records
+
+Existing records stay readable after changing `searchable`, but they keep the storage format
+of the previous flag until they are re-saved:
+
+- `False` → `True`: existing records do not have a hashed section yet, so `exact`/`in` lookups will not match them.
+- `True` → `False`: existing records still carry the no-longer-used hashed section.
+
+After changing the flag (and running `makemigrations`/`migrate`, since the database index changes),
+re-save the affected records to convert them to the new format, e.g. in a data migration:
+
+```python
+def resave_records(apps, schema_editor):
+    for record in apps.get_model('myapp', 'MyModel').objects.iterator():
+        record.save(update_fields=['my_field'])
+```
+
 ### Encryption
 
 ```python
@@ -178,7 +195,7 @@ class EncryptedMinioMediaStorage(
 - `in` lookup on `JSONField` is not available
 - Large files are not performance-friendly at the moment (see [#2](https://github.com/C0D1UM/django-secured-fields/issues/2))
 - Search on `BinaryField` does not supported at the moment (see [#6](https://github.com/C0D1UM/django-secured-fields/issues/6))
-- Changing `searchable` value in a field with the records in the database is not supported (see [#7](https://github.com/C0D1UM/django-secured-fields/issues/7))
+- Changing `searchable` on a field with existing records requires re-saving the records to make search results consistent (see [Changing `searchable` on a field with existing records](#changing-searchable-on-a-field-with-existing-records))
 
 ## Development
 

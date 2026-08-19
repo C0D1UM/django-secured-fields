@@ -3,6 +3,7 @@ __all__ = [
     'EncryptedStorageMixin',
 ]
 
+import re
 import typing
 from io import BytesIO
 
@@ -34,6 +35,7 @@ class EncryptedMixin(Field):
 
     _encrypted_internal_type = 'TextField'
     separator = '$'
+    hashed_value_pattern = re.compile(r'[0-9a-f]{64}')
 
     internal_type = _encrypted_internal_type
     call_super_from_db_value = False
@@ -124,17 +126,26 @@ class EncryptedMixin(Field):
 
         return value
 
+    def get_encrypted_section(self, value: str) -> str:
+        """Extract the encrypted section from a stored value.
+
+        The stored format is detected from the value itself instead of the current `searchable`
+        flag, since existing records may still be in the format of the flag's previous value.
+        A Fernet token is base64url-encoded so it never contains the separator, and the hashed
+        section is always a sha256 hexdigest.
+        """
+        encrypted_value, separator, hashed_value = value.partition(self.separator)
+        if separator and self.hashed_value_pattern.fullmatch(hashed_value):
+            return encrypted_value
+
+        return value
+
     def to_python(self, value):
         if not isinstance(value, str):
             return value
 
-        encrypted_value = value
-        if self.searchable:
-            # get only encrypted section
-            encrypted_value = value[:-(64 + len(self.separator))]
-
         try:
-            value = self.decrypt(encrypted_value)
+            value = self.decrypt(self.get_encrypted_section(value))
         except fernet.InvalidToken:
             # not encrypted
             pass
