@@ -45,8 +45,9 @@ jobs:
       database-image: postgres
       database-url: "postgresql://postgres:P%40ssw0rd@localhost"
       database-port: 5432
+      # oldest version supported by every Django in the matrix (Django 6.1 requires 15+)
       database-versions: >-
-        [ "14-alpine", "16-alpine", "18-alpine" ]
+        [ "15-alpine", "16-alpine", "18-alpine" ]
       database-env: >-
         { "POSTGRES_DB": "db", "POSTGRES_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "pg_isready"
@@ -61,8 +62,9 @@ jobs:
       database-image: mysql
       database-url: "mysql://root:P%40ssw0rd@127.0.0.1"
       database-port: 3306
+      # oldest version supported by every Django in the matrix (Django 6.1 requires 8.4+)
       database-versions: >-
-        [ "8.0", "8.4", "9" ]
+        [ "8.4", "9" ]
       database-env: >-
         { "MYSQL_DATABASE": "db", "MYSQL_ROOT_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "mysqladmin ping"
