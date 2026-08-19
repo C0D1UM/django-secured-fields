@@ -119,6 +119,17 @@ class EncryptedMixin(Field):
         if value is None:
             return value
 
+        # NOTE: decryption only happens here, on values coming from the database. `to_python()`
+        #       must not decrypt since it also receives in-memory values (form input, `full_clean()`,
+        #       `loaddata` fixtures), and a plaintext that happens to be a valid Fernet token would
+        #       silently be replaced by its decrypted content.
+        if isinstance(value, str):
+            try:
+                value = self.decrypt(self.get_encrypted_section(value))
+            except fernet.InvalidToken:
+                # not encrypted
+                pass
+
         value = self.to_python(value)
 
         if self.call_super_from_db_value:
@@ -132,25 +143,17 @@ class EncryptedMixin(Field):
         The stored format is detected from the value itself instead of the current `searchable`
         flag, since existing records may still be in the format of the flag's previous value.
         A Fernet token is base64url-encoded so it never contains the separator, and the hashed
-        section is always a sha256 hexdigest.
+        section is always a sha256 hexdigest, so a searchable value always ends with the
+        separator followed by exactly 64 hex characters.
         """
-        encrypted_value, separator, hashed_value = value.partition(self.separator)
-        if separator and self.hashed_value_pattern.fullmatch(hashed_value):
-            return encrypted_value
+        hashed_section_length = len(self.separator) + 64
+        if (
+            len(value) > hashed_section_length and value[-hashed_section_length:-64] == self.separator and
+            self.hashed_value_pattern.fullmatch(value[-64:])
+        ):
+            return value[:-hashed_section_length]
 
         return value
-
-    def to_python(self, value):
-        if not isinstance(value, str):
-            return value
-
-        try:
-            value = self.decrypt(self.get_encrypted_section(value))
-        except fernet.InvalidToken:
-            # not encrypted
-            pass
-
-        return super().to_python(value)
 
     @cached_property
     def validators(self):
@@ -168,6 +171,11 @@ class EncryptedMixin(Field):
 
         # JSONField not supports `in`
         if self.get_original_internal_type() == 'JSONField' and lookup_name == 'in':
+            raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
+
+        # `exact` and `in` match against the hashed section, which only searchable fields write;
+        # on a non-searchable field they would silently match only stale searchable-format records
+        if not self.searchable and lookup_name in ('exact', 'in'):
             raise exceptions.LookupNotSupported(self.get_original_internal_type(), lookup_name)
 
         allowed_lookups = ['exact', 'in', 'isnull']

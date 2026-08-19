@@ -72,6 +72,13 @@ class ChangingSearchableTestCase(test.TestCase):
         self.assertNotIn(EncryptedMixin.separator, raw_value)
         self.assertEqual(get_fernet().decrypt(raw_value.encode()).decode(), 'test')
 
+    def test_to_python_keeps_token_shaped_plaintext(self):
+        """In-memory values (forms, fixtures) which look like stored values must not be decrypted"""
+        field = models.SearchableCharFieldModel._meta.get_field('field')  # pylint: disable=protected-access
+
+        for plaintext in [self.make_non_searchable_value('secret'), self.make_searchable_value('secret')]:
+            self.assertEqual(field.to_python(plaintext), plaintext)
+
     def test_unencrypted_value_with_separator_is_untouched(self):
         """A plain unencrypted value which looks like the searchable format should pass through unchanged"""
         raw_value = 'plain' + EncryptedMixin.separator + utils.hash_with_salt('plain')

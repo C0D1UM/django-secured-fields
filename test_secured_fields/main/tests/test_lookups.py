@@ -224,3 +224,17 @@ class UnsupportedLookupTestCase(test.TestCase):
             models.SearchableCharFieldModel.objects.filter,
             field__contains='test',
         )
+
+    def test_non_searchable_char_field_exact(self):
+        self.assertRaises(
+            exceptions.LookupNotSupported,
+            models.CharFieldModel.objects.filter,
+            field='test',
+        )
+
+    def test_non_searchable_char_field_in(self):
+        self.assertRaises(
+            exceptions.LookupNotSupported,
+            models.CharFieldModel.objects.filter,
+            field__in=['test'],
+        )
