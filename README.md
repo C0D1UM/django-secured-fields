@@ -8,6 +8,12 @@
 
 Django encrypted fields with search enabled.
 
+## Requirements
+
+- Python 3.10+
+- Django 4.2+
+- PostgreSQL, MySQL or SQLite
+
 ## Features
 
 - Automatically encrypt/decrypt field value using [cryptography](https://github.com/pyca/cryptography)'s [Fernet](https://cryptography.io/en/latest/fernet)
@@ -154,7 +160,7 @@ task_id = EncryptedUUIDField(searchable=True)
 
 ### `EncryptedStorageMixin`
 
-If you use a custom file storage class (e.g. defined in `settings.py`'s `DEFAULT_FILE_STORAGE`), you can enable file encryption using `EncryptedStorageMixin`.
+If you use a custom file storage class (e.g. defined in `settings.py`'s `STORAGES`), you can enable file encryption using `EncryptedStorageMixin`.
 
 ```python
 import secured_fields
@@ -179,7 +185,7 @@ class EncryptedMinioMediaStorage(
 ### Requirements
 
 - Docker
-- Poetry
+- Poetry 2.0+
 - MySQL Client
   - `brew install mysql-client`
   - `echo 'export PATH="/usr/local/opt/mysql-client/bin:$PATH"' >> ~/.bash_profile`

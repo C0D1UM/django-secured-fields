@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: "3.13"
       - name: Fetch pip cache
         uses: actions/cache@v6
         with:
@@ -33,46 +33,48 @@ jobs:
           key: pip
       - name: Install dependencies
         run: |
-          pip install pylint~=2.0
+          pip install pylint~=4.0
       - name: Analyzing the code
         run: |
           pylint secured_fields test_secured_fields
   test-pg:
     needs:
       - lint
-    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml
     with:
       database-image: postgres
       database-url: "postgresql://postgres:P%40ssw0rd@localhost"
       database-port: 5432
+      # oldest version supported by every Django in the matrix (Django 6.1 requires 15+)
       database-versions: >-
-        [ "12.9-alpine", "13.5-alpine", "14.1-alpine" ]
+        [ "15-alpine", "16-alpine", "18-alpine" ]
       database-env: >-
         { "POSTGRES_DB": "db", "POSTGRES_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "pg_isready"
-      database-version-codecov: "14.1-alpine"  # newest
+      database-version-codecov: "18-alpine"  # newest
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test-mysql:
     needs:
       - lint
-    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml
     with:
       database-image: mysql
       database-url: "mysql://root:P%40ssw0rd@127.0.0.1"
       database-port: 3306
+      # oldest version supported by every Django in the matrix (Django 6.1 requires 8.4+)
       database-versions: >-
-        [ "5.7", "8.0" ]
+        [ "8.4", "9" ]
       database-env: >-
         { "MYSQL_DATABASE": "db", "MYSQL_ROOT_PASSWORD": "P@ssw0rd" }
       database-health-cmd: "mysqladmin ping"
-      database-version-codecov: "8.0"  # newest
+      database-version-codecov: "9"  # newest
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test-sqlite:
     needs:
       - lint
-    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml
     with:
       database-image: spaster/alpine-sleep
       database-url: "sqlite:///db.sqlite3"

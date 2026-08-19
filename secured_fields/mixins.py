@@ -16,6 +16,18 @@ from . import exceptions, utils
 from .enum import DatabaseVendor
 from .fernet import get_fernet
 
+INTEGER_INTERNAL_TYPES = frozenset({
+    'AutoField',
+    'BigAutoField',
+    'BigIntegerField',
+    'IntegerField',
+    'PositiveBigIntegerField',
+    'PositiveIntegerField',
+    'PositiveSmallIntegerField',
+    'SmallAutoField',
+    'SmallIntegerField',
+})
+
 
 class EncryptedMixin(Field):
     """Mixin for encrypting/decrypting field value"""
@@ -63,12 +75,25 @@ class EncryptedMixin(Field):
     def prepare_encryption(self, value) -> bytes:
         return self.prepare_string(value).encode()
 
+    def prepare_db_value(self, value, connection):  # pylint: disable=redefined-outer-name
+        """Convert the value into its database representation before it gets encrypted"""
+
+        # NOTE: integer-based fields hand `get_internal_type()` over to
+        #       `connection.ops.adapt_integerfield_value()`, which only understands integer
+        #       internal types (psycopg 3 maps them to its own wrapper classes). The encrypted
+        #       value is stored in a text column, so the backend adaptation is skipped and only
+        #       the Python coercion done by `get_prep_value()` is kept.
+        if self.get_original_internal_type() in INTEGER_INTERNAL_TYPES:
+            return self.get_prep_value(value)
+
+        return super().get_db_prep_save(value, connection)
+
     def get_db_prep_save(self, value, connection):  # pylint: disable=redefined-outer-name
         if value is None:
             return value
 
         if not isinstance(value, bytes):
-            value = super().get_db_prep_save(value, connection)
+            value = self.prepare_db_value(value, connection)
 
         value = self.prepare_encryption(value)
 

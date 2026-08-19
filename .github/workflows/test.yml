@@ -34,23 +34,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: [ "3.8", "3.9", "3.10" ]
-        django: [ "3.1", "3.2", "4.0", "4.1" ]
+        python: [ "3.10", "3.11", "3.12", "3.13", "3.14" ]
+        django: [ "4.2", "5.2", "6.0", "6.1" ]
         db: ${{ fromJSON(inputs.database-versions) }}
         # ref: https://github.com/jefftriplett/python-github-actions-matrix-demo
         exclude:
-          # Python 3.10 is compatible with Django 3.2+
+          # Django 4.2 is compatible with Python 3.8-3.12
+          - python: "3.13"
+            django: "4.2"
+          - python: "3.14"
+            django: "4.2"
+          # Django 6.0+ requires Python 3.12+
           - python: "3.10"
-            django: "3.1"
-          # Django 4.0+ requires zoneinfo from Python 3.9+
-          - python: "3.8"
-            django: "4.0"
-          - python: "3.8"
-            django: "4.1"
+            django: "6.0"
+          - python: "3.11"
+            django: "6.0"
+          - python: "3.10"
+            django: "6.1"
+          - python: "3.11"
+            django: "6.1"
         # newest matrix set which will upload to codecov
         include:
-          - python: "3.10"
-            django: "4.1"
+          - python: "3.14"
+            django: "6.1"
             db: ${{ inputs.database-version-codecov }}
             codecov: "true"
     services:
@@ -82,13 +88,12 @@ jobs:
           path: /home/runner/.cache/pypoetry/virtualenvs
           key: venv-${{ matrix.python }}-${{ matrix.django }}-${{ hashFiles('**/poetry.lock') }}
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v2.0.0
-        with:
-          poetry-version: "1.8.3"
+        run: |
+          pipx install --python "$(which python)" poetry==2.3.3
       - name: Install dependencies
         run: |
-          poetry add -n django@~${{ matrix.django }}
           poetry install -n
+          poetry run pip install -q "django~=${{ matrix.django }}.0"
       - name: Verify package versions
         run: |
           python -V

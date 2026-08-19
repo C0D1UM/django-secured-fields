@@ -122,6 +122,24 @@ class BinaryFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFi
 #         self.assert_hashed_field(b'test', salt='test')
 
 
+class BigIntegerFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.BigIntegerFieldModel
+
+    def test_simple(self):
+        self.create_and_assert(2**40)
+        self.assert_encrypted_str_field('1099511627776')
+
+
+class SearchableBigIntegerFieldTestCase(BigIntegerFieldTestCase):
+    model_class = models.SearchableBigIntegerFieldModel
+    searchable = True
+
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(2**40)
+        self.assert_hashed_field('1099511627776', salt='test')
+
+
 class BooleanFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
     model_class = models.BooleanFieldModel
 
@@ -408,3 +426,29 @@ class SearchableTextFieldTestCase(TextFieldTestCase):
     def test_with_salt(self):
         self.create_and_assert('test')
         self.assert_hashed_field('test', salt='test')
+
+
+class UUIDFieldTestCase(BaseTestCases.NullValueTestMixin, BaseTestCases.BaseFieldTestCase):
+    model_class = models.UUIDFieldModel
+
+    @staticmethod
+    def get_expected_str() -> str:
+        # `UUIDField` falls back to the hex form on backends without a native UUID type
+        if connection.features.has_native_uuid_field:
+            return str(test_utils.UUID_1)
+
+        return test_utils.UUID_1.hex
+
+    def test_simple(self):
+        self.create_and_assert(test_utils.UUID_1)
+        self.assert_encrypted_str_field(self.get_expected_str())
+
+
+class SearchableUUIDFieldTestCase(UUIDFieldTestCase):
+    model_class = models.SearchableUUIDFieldModel
+    searchable = True
+
+    @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
+    def test_with_salt(self):
+        self.create_and_assert(test_utils.UUID_1)
+        self.assert_hashed_field(self.get_expected_str(), salt='test')
