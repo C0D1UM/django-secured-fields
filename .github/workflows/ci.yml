@@ -40,7 +40,7 @@ jobs:
   test-pg:
     needs:
       - lint
-    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml
     with:
       database-image: postgres
       database-url: "postgresql://postgres:P%40ssw0rd@localhost"
@@ -56,7 +56,7 @@ jobs:
   test-mysql:
     needs:
       - lint
-    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml
     with:
       database-image: mysql
       database-url: "mysql://root:P%40ssw0rd@127.0.0.1"
@@ -72,7 +72,7 @@ jobs:
   test-sqlite:
     needs:
       - lint
-    uses: c0d1um/django-secured-fields/.github/workflows/test.yml@main
+    uses: ./.github/workflows/test.yml
     with:
       database-image: spaster/alpine-sleep
       database-url: "sqlite:///db.sqlite3"
