@@ -36,6 +36,13 @@ class EncryptedExactLookupTestCase(test.TestCase):
     def test_char_field(self):
         self.create_and_assert(models.SearchableCharFieldModel, 'test')
 
+    def test_char_field_with_like_wildcards(self):
+        """LIKE wildcards (`%`, `_`) and escape character must not affect the hashed lookup"""
+
+        for value in ['under_score', '100%', 'back\\slash', 'mixed_10%\\value']:
+            with self.subTest(value=value):
+                self.create_and_assert(models.SearchableCharFieldModel, value)
+
     def test_date_field(self):
         self.create_and_assert(models.SearchableDateFieldModel, datetime.date(2021, 12, 31))
 
@@ -57,8 +64,14 @@ class EncryptedExactLookupTestCase(test.TestCase):
     def test_json_field(self):
         self.create_and_assert(models.SearchableJSONFieldModel, {'name': 'John Doe'})
 
+    def test_json_field_with_like_wildcards(self):
+        self.create_and_assert(models.SearchableJSONFieldModel, {'name': 'John_Doe 100%'})
+
     def test_text_field(self):
         self.create_and_assert(models.SearchableTextFieldModel, 'test')
+
+    def test_text_field_with_like_wildcards(self):
+        self.create_and_assert(models.SearchableTextFieldModel, 'under_score 100%')
 
 
 @test.override_settings(SECURED_FIELDS_HASH_SALT='test')
@@ -85,6 +98,13 @@ class EncryptedInLookupTestCase(test.TestCase):
 
     def test_char_field(self):
         self.create_and_assert(models.SearchableCharFieldModel, 'test', ['test', 'user'])
+
+    def test_char_field_with_like_wildcards(self):
+        self.create_and_assert(
+            models.SearchableCharFieldModel,
+            'under_score 100%',
+            ['under_score 100%', 'another_one'],
+        )
 
     def test_date_field(self):
         self.create_and_assert(

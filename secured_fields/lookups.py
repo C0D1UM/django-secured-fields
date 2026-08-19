@@ -7,14 +7,17 @@ from . import mixins, utils
 
 class EncryptedExact(lookups.EndsWith):
 
-    def as_sql(self, compiler, connection):
-        sql, params = super().as_sql(compiler, connection)
+    def process_rhs(self, qn, connection):
+        # NOTE: `PatternLookup.process_rhs()` is intentionally skipped here. It escapes LIKE
+        #       wildcards (`%`, `_` and `\`) in the value which would make the hash differ
+        #       from the one stored alongside the encrypted value.
+        rhs, params = lookups.Lookup.process_rhs(self, qn, connection)
 
-        # search using hash
-        hashed = utils.hash_with_salt(params[0][1:])
-        params[0] = '%' + mixins.EncryptedMixin.separator + hashed
+        if self.rhs_is_direct_value() and params and not self.bilateral_transforms:
+            # search using hash
+            params[0] = '%' + mixins.EncryptedMixin.separator + utils.hash_with_salt(str(params[0]))
 
-        return sql, params
+        return rhs, params
 
 
 class EncryptedJSONExact(EncryptedExact):
