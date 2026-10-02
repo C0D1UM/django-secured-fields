@@ -6,11 +6,13 @@ import typing
 import warnings
 
 from django import test
-from django.core import exceptions
+from django.core import exceptions, serializers
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
-from django.db.models import Model
+from django.db.models import Model, TextField
+from django.db.models.functions import Cast
+from django.forms import modelform_factory
 from django.utils import timezone
 from freezegun import freeze_time
 
@@ -452,3 +454,231 @@ class SearchableUUIDFieldTestCase(UUIDFieldTestCase):
     def test_with_salt(self):
         self.create_and_assert(test_utils.UUID_1)
         self.assert_hashed_field(self.get_expected_str(), salt='test')
+
+
+class FieldValueTestCase(test.TestCase):
+    """Values which could be mishandled by the string conversion before encryption"""
+
+    def assert_round_trip(self, model_class, value):
+        pk = model_class.objects.create(field=value).pk
+
+        self.assertEqual(model_class.objects.get(pk=pk).field, value)
+
+    def test_values(self):
+        cases = [
+            (models.BinaryFieldModel, [b'', b'\x00\xff\x10', bytes(range(256))]),
+            (models.BigIntegerFieldModel, [0, -2**63, 2**63 - 1]),
+            (models.SearchableBooleanFieldModel, [False]),
+            (models.CharFieldModel, ['', 'สวัสดี 👋', 'with $ separator', ' leading and trailing ']),
+            (models.SearchableCharFieldModel, ['', 'สวัสดี 👋', 'with $ separator']),
+            (models.DateFieldModel, [datetime.date(1, 1, 1), datetime.date(9999, 12, 31)]),
+            (models.DecimalFieldModel, [decimal.Decimal('0.00'), decimal.Decimal('-9999.99'),
+                                        decimal.Decimal('9999.99')]),
+            (models.IntegerFieldModel, [0, -1, -2**31, 2**31 - 1]),
+            (models.JSONFieldModel, [[], {}, [1, 'two', None, True], 'string', 1, 1.5, True, False,
+                                     {'nested': {'list': [1, {'a': 'สวัสดี'}]}}]),
+            (models.TextFieldModel, ['', 'line 1\nline 2', 'a' * 10000]),
+            (models.UUIDFieldModel, [test_utils.UUID_2]),
+        ]
+
+        for model_class, values in cases:
+            for value in values:
+                with self.subTest(model_class=model_class, value=value):
+                    self.assert_round_trip(model_class, value)
+
+    def test_binary_field_returns_bytes(self):
+        pk = models.BinaryFieldModel.objects.create(field=b'test').pk
+
+        self.assertIsInstance(models.BinaryFieldModel.objects.get(pk=pk).field, bytes)
+
+    def test_binary_field_accepts_bytes_like_values(self):
+        for value in (memoryview(b'test'), bytearray(b'test')):
+            with self.subTest(value=value):
+                pk = models.BinaryFieldModel.objects.create(field=value).pk
+
+                self.assertEqual(models.BinaryFieldModel.objects.get(pk=pk).field, b'test')
+
+    def test_decimal_field_rounds_to_decimal_places(self):
+        pk = models.DecimalFieldModel.objects.create(field=decimal.Decimal('1.2')).pk
+
+        model = models.DecimalFieldModel.objects.get(pk=pk)
+
+        self.assertEqual(model.field, decimal.Decimal('1.20'))
+
+    def test_value_is_converted_to_field_type(self):
+        cases = [
+            (models.IntegerFieldModel, '100', 100),
+            (models.DecimalFieldModel, '1.5', decimal.Decimal('1.50')),
+            (models.DateFieldModel, '2021-12-31', datetime.date(2021, 12, 31)),
+            (models.UUIDFieldModel, str(test_utils.UUID_1), test_utils.UUID_1),
+        ]
+
+        for model_class, create_value, expected in cases:
+            with self.subTest(model_class=model_class):
+                pk = model_class.objects.create(field=create_value).pk
+
+                self.assertEqual(model_class.objects.get(pk=pk).field, expected)
+
+    def test_json_field_with_none_is_sql_null(self):
+        pk = models.JSONFieldModel.objects.create(field=None).pk
+
+        self.assertTrue(models.JSONFieldModel.objects.filter(pk=pk, field__isnull=True).exists())
+
+    def test_encrypted_value_differs_for_same_value(self):
+        first = models.SearchableCharFieldModel.objects.create(field='test')
+        second = models.SearchableCharFieldModel.objects.create(field='test')
+
+        first_raw, second_raw = models.SearchableCharFieldModel.objects.filter(
+            pk__in=[first.pk, second.pk],
+        ).order_by('pk').values_list(Cast('field', TextField()), flat=True)
+
+        self.assertNotEqual(first_raw, second_raw)
+        # the hashed section is deterministic
+        self.assertEqual(first_raw[-64:], second_raw[-64:])
+
+
+class QuerySetTestCase(test.TestCase):
+
+    def setUp(self):
+        self.model = models.SearchableCharFieldModel.objects.create(field='test')
+
+    def test_values(self):
+        self.assertEqual(
+            list(models.SearchableCharFieldModel.objects.filter(pk=self.model.pk).values('field')),
+            [{'field': 'test'}],
+        )
+
+    def test_values_list(self):
+        self.assertEqual(
+            list(models.SearchableCharFieldModel.objects.filter(pk=self.model.pk).values_list('field', flat=True)),
+            ['test'],
+        )
+
+    def test_values_list_non_string_field(self):
+        pk = models.IntegerFieldModel.objects.create(field=100).pk
+
+        self.assertEqual(models.IntegerFieldModel.objects.filter(pk=pk).values_list('field', flat=True).get(), 100)
+
+    def test_in_bulk(self):
+        self.assertEqual(models.SearchableCharFieldModel.objects.in_bulk([self.model.pk])[self.model.pk].field, 'test')
+
+    def test_only(self):
+        self.assertEqual(models.SearchableCharFieldModel.objects.only('field').get(pk=self.model.pk).field, 'test')
+
+    def test_defer(self):
+        model = models.SearchableCharFieldModel.objects.defer('field').get(pk=self.model.pk)
+
+        self.assertEqual(model.field, 'test')
+
+
+class SerializationTestCase(test.TestCase):
+
+    def test_round_trip(self):
+        cases = [
+            (models.SearchableCharFieldModel, 'test'),
+            (models.IntegerFieldModel, 100),
+            (models.DecimalFieldModel, decimal.Decimal('1.20')),
+            (models.DateFieldModel, datetime.date(2021, 12, 31)),
+            (models.JSONFieldModel, {'name': 'John Doe'}),
+            (models.UUIDFieldModel, test_utils.UUID_1),
+            (models.BinaryFieldModel, b'test'),
+        ]
+
+        for model_class, value in cases:
+            with self.subTest(model_class=model_class):
+                model = model_class.objects.create(field=value)
+
+                data = serializers.serialize('json', model_class.objects.filter(pk=model.pk))
+                model_class.objects.all().delete()
+
+                # serialized data contains the decrypted value
+                self.assertNotIn('gAAAAA', data)
+
+                for deserialized in serializers.deserialize('json', data):
+                    deserialized.save()
+
+                self.assertEqual(model_class.objects.get(pk=model.pk).field, value)
+
+    def test_deserialized_searchable_value_is_searchable(self):
+        pk = models.SearchableCharFieldModel.objects.create(field='test').pk
+        data = serializers.serialize('json', models.SearchableCharFieldModel.objects.filter(pk=pk))
+        models.SearchableCharFieldModel.objects.all().delete()
+
+        for deserialized in serializers.deserialize('json', data):
+            deserialized.save()
+
+        self.assertEqual(models.SearchableCharFieldModel.objects.get(field='test').pk, pk)
+
+
+class ModelFormTestCase(test.TestCase):
+
+    def test_create(self):
+        form_class = modelform_factory(models.SearchableCharFieldModel, fields=['field'])
+        form = form_class(data={'field': 'test'})
+
+        self.assertTrue(form.is_valid(), form.errors)
+        model = form.save()
+
+        self.assertEqual(models.SearchableCharFieldModel.objects.get(field='test').pk, model.pk)
+
+    def test_initial_value_is_decrypted(self):
+        model = models.SearchableCharFieldModel.objects.create(field='test')
+        model.refresh_from_db()
+
+        form_class = modelform_factory(models.SearchableCharFieldModel, fields=['field'])
+
+        self.assertEqual(form_class(instance=model).initial['field'], 'test')
+
+    def test_max_length(self):
+        form_class = modelform_factory(models.CharFieldModel, fields=['field'])
+        form = form_class(data={'field': 'a' * 31})
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('field', form.errors)
+
+    def test_integer(self):
+        form_class = modelform_factory(models.IntegerFieldModel, fields=['field'])
+
+        form = form_class(data={'field': 'abc'})
+        self.assertFalse(form.is_valid())
+
+        form = form_class(data={'field': '100'})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(models.IntegerFieldModel.objects.get(pk=form.save().pk).field, 100)
+
+
+class FullCleanTestCase(test.TestCase):
+
+    def assert_invalid(self, model_class, value):
+        with self.assertRaises(exceptions.ValidationError):
+            model_class(field=value).full_clean()
+
+    def assert_valid(self, model_class, value):
+        model_class(field=value).full_clean()
+
+    def assert_integer_range(self, model_class, internal_type):
+        # the range depends on the database backend
+        min_value, max_value = connection.ops.integer_field_range(internal_type)
+        if min_value is None or max_value is None:
+            self.skipTest(f'`{internal_type}` has no range on this database backend')
+
+        self.assert_valid(model_class, min_value)
+        self.assert_valid(model_class, max_value)
+        self.assert_invalid(model_class, min_value - 1)
+        self.assert_invalid(model_class, max_value + 1)
+
+    def test_integer_range(self):
+        self.assert_integer_range(models.IntegerFieldModel, 'IntegerField')
+
+    def test_big_integer_range(self):
+        self.assert_integer_range(models.BigIntegerFieldModel, 'BigIntegerField')
+
+    def test_decimal_digits(self):
+        self.assert_valid(models.DecimalFieldModel, decimal.Decimal('9999.99'))
+        self.assert_invalid(models.DecimalFieldModel, decimal.Decimal('10000.00'))
+        self.assert_invalid(models.DecimalFieldModel, decimal.Decimal('1.234'))
+
+    def test_invalid_type(self):
+        self.assert_invalid(models.IntegerFieldModel, 'abc')
+        self.assert_invalid(models.DateFieldModel, 'not a date')
+        self.assert_invalid(models.UUIDFieldModel, 'not a uuid')
