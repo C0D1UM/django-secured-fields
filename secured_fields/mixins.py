@@ -10,7 +10,8 @@ from io import BytesIO
 from cryptography import fernet
 from django.core.files import File
 from django.db import connection
-from django.db.models import Field
+from django.db.models import Case, Field, Value, When
+from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 
 from . import exceptions, utils
@@ -91,6 +92,16 @@ class EncryptedMixin(Field):
         return super().get_db_prep_save(value, connection)
 
     def get_db_prep_save(self, value, connection):  # pylint: disable=redefined-outer-name
+        # NOTE: `update()` and `bulk_update()` hand query expressions over to this method as well.
+        #       A top-level `Value` is unwrapped so that its content gets encrypted. Other
+        #       expressions are compiled into SQL as-is, like Django's own `Field.get_db_prep_save()`
+        #       does, so they are only accepted when everything they write is encrypted.
+        if isinstance(value, Value):
+            value = value.value
+        elif hasattr(value, 'as_sql'):
+            self.check_save_expression(value)
+            return value
+
         if value is None:
             return value
 
@@ -105,6 +116,31 @@ class EncryptedMixin(Field):
 
         # append hashed value
         return encrypted + self.separator + utils.hash_with_salt(value)
+
+    def check_save_expression(self, expression):
+        """Reject expressions that would write an unencrypted value into the column.
+
+        `bulk_update()` writes a `Case` whose results are `Value`s with this field as their
+        `output_field`; `Value.as_sql()` then encrypts each of them through `get_db_prep_save()`.
+        On backends requiring it (PostgreSQL), the `Case` is wrapped in a `Cast` to the field.
+        Any other value source (`F()`, database functions, a `Value` resolving to a regular field)
+        would be written as-is.
+        """
+        if isinstance(expression, Cast) and isinstance(expression.output_field, EncryptedMixin):
+            self.check_save_expression(expression.get_source_expressions()[0])
+        elif isinstance(expression, Case):
+            for case in expression.cases:
+                self.check_save_expression(case)
+            self.check_save_expression(expression.default)
+        elif isinstance(expression, When):
+            self.check_save_expression(expression.result)
+        elif isinstance(expression, Value):
+            if expression.value is not None and not isinstance(
+                getattr(expression, '_output_field_or_none', None), EncryptedMixin
+            ):
+                raise exceptions.ExpressionNotSupported(self.get_original_internal_type(), expression)
+        else:
+            raise exceptions.ExpressionNotSupported(self.get_original_internal_type(), expression)
 
     def decrypt(self, value: str) -> typing.Union[bytes, str]:
         value = get_fernet().decrypt(value.encode())
