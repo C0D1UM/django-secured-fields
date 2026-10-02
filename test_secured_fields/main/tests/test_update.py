@@ -1,7 +1,7 @@
 from django import test
 from django.db import connection, transaction
-from django.db.models import Case, F, Model, Value, When
-from django.db.models.functions import Upper
+from django.db.models import Case, F, Model, TextField, Value, When
+from django.db.models.functions import Cast, Upper
 
 from main import models
 from secured_fields import utils
@@ -64,6 +64,17 @@ class UpdateTestCase(test.TestCase):
         self.assertEqual(models.CharFieldModel.objects.get(pk=model.pk).field, 'updated')
         self.assert_encrypted(models.CharFieldModel, model.pk, 'updated')
 
+    def test_update_with_cast_to_field(self):
+        """The shape `bulk_update()` writes on backends requiring a casted `Case` (PostgreSQL)"""
+        model = models.CharFieldModel.objects.create(field='test')
+        field = models.CharFieldModel._meta.get_field('field')  # pylint: disable=protected-access
+
+        models.CharFieldModel.objects.filter(pk=model.pk).update(
+            field=Cast(Case(When(pk=model.pk, then=Value('updated', output_field=field))), output_field=field)
+        )
+
+        self.assert_encrypted(models.CharFieldModel, model.pk, 'updated')
+
     def test_update_with_value_none(self):
         model = models.CharFieldModel.objects.create(field='test')
 
@@ -74,11 +85,13 @@ class UpdateTestCase(test.TestCase):
     def test_update_with_unencrypted_expression(self):
         model = models.CharFieldModel.objects.create(field='test')
         queryset = models.CharFieldModel.objects.filter(pk=model.pk)
+        field = models.CharFieldModel._meta.get_field('field')  # pylint: disable=protected-access
 
         for expression in (
             F('field'),
             Upper(Value('updated')),
             Case(When(pk=model.pk, then=Value('updated'))),
+            Cast(Value('updated', output_field=field), output_field=TextField()),
         ):
             with self.subTest(expression=expression), self.assertRaises(ExpressionNotSupported), transaction.atomic():
                 queryset.update(field=expression)

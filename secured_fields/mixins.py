@@ -11,6 +11,7 @@ from cryptography import fernet
 from django.core.files import File
 from django.db import connection
 from django.db.models import Case, Field, Value, When
+from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 
 from . import exceptions, utils
@@ -121,10 +122,13 @@ class EncryptedMixin(Field):
 
         `bulk_update()` writes a `Case` whose results are `Value`s with this field as their
         `output_field`; `Value.as_sql()` then encrypts each of them through `get_db_prep_save()`.
+        On backends requiring it (PostgreSQL), the `Case` is wrapped in a `Cast` to the field.
         Any other value source (`F()`, database functions, a `Value` resolving to a regular field)
         would be written as-is.
         """
-        if isinstance(expression, Case):
+        if isinstance(expression, Cast) and isinstance(expression.output_field, EncryptedMixin):
+            self.check_save_expression(expression.get_source_expressions()[0])
+        elif isinstance(expression, Case):
             for case in expression.cases:
                 self.check_save_expression(case)
             self.check_save_expression(expression.default)
