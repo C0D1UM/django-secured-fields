@@ -109,6 +109,10 @@ class FieldInternalTypeTestCase(test.SimpleTestCase):
 
 class FieldValidatorsTestCase(test.SimpleTestCase):
 
+    @staticmethod
+    def describe_validators(field):
+        return [(type(validator), getattr(validator, 'limit_value', None)) for validator in field.validators]
+
     def test_integer_fields_have_same_validators_as_regular_fields(self):
         """Range validators depend on the internal type, which has to be the original one here"""
         cases = [
@@ -119,8 +123,8 @@ class FieldValidatorsTestCase(test.SimpleTestCase):
         for encrypted_field, regular_field in cases:
             with self.subTest(field=encrypted_field):
                 self.assertEqual(
-                    [(type(validator), validator.limit_value) for validator in encrypted_field.validators],
-                    [(type(validator), validator.limit_value) for validator in regular_field.validators],
+                    self.describe_validators(encrypted_field),
+                    self.describe_validators(regular_field),
                 )
 
     def test_internal_type_is_restored(self):
