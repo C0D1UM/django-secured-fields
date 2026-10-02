@@ -22,6 +22,11 @@ from .. import mixins, lookups
 
 class EncryptedBinaryField(mixins.EncryptedMixin, models.BinaryField):
 
+    def prepare_db_value(self, value, connection):  # pylint: disable=unused-argument
+        # NOTE: `BinaryField` also accepts other bytes-like values (`memoryview` from deserialization,
+        #       `bytearray`), but Fernet only encrypts `bytes`.
+        return bytes(value)
+
     def prepare_encryption(self, value) -> bytes:
         return value
 
