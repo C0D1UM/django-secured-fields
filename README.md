@@ -209,21 +209,13 @@ See more details in [MultiFernet.rotate](https://cryptography.io/en/latest/ferne
 
 ### Changing the Hash Salt
 
-`SECURED_FIELDS_HASH_SALT` is only used for the hashed section of `searchable` fields; it does not affect
-encryption, so all records stay readable after changing it. However, `exact`/`in` lookups hash the searched
-value with the current salt only, so they stop matching existing records until those records are re-saved
-with the new salt. Unlike encryption keys, multiple salts are not supported, so plan the change for a time
-when lookup misses are acceptable, and re-save every searchable field right after deploying the new salt:
+Changing `SECURED_FIELDS_HASH_SALT` requires re-saving all records of `searchable` fields, otherwise `exact`/`in` lookups will not match them:
 
 ```python
 def resave_records(apps, schema_editor):
     model = apps.get_model('myapp', 'MyModel')
     model.objects.bulk_update(model.objects.all(), ['my_searchable_field'], batch_size=1000)
 ```
-
-> **Note:** older versions of this README spelled the setting `SECURED_FILDS_HASH_SALT` in the installation
-> example. That name is not read by the package, so a project which copied it has been using an empty salt.
-> Renaming it to `SECURED_FIELDS_HASH_SALT` changes the salt and requires re-saving records as described above.
 
 ### `EncryptedMixin`
 
