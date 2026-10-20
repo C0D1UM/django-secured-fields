@@ -135,47 +135,6 @@ def resave_records(apps, schema_editor):
 `bulk_update` re-encrypts through the same path as `save()` but batches the queries, and — unlike
 re-saving each record — does not overwrite `auto_now` date/datetime fields with the migration run time.
 
-#### Unique constraints on searchable fields
-
-Encryption is randomized, so the same value never produces the same encrypted text and a
-`unique=True` on an encrypted field would never trigger (it is ignored for that reason). On a
-`searchable` field, however, the stored value always ends with a 64-character sha256 hash of the value,
-which a functional `UniqueConstraint` can target, alone or together with other fields:
-
-```python
-from django.db import models
-from django.db.models.functions import Right
-
-import secured_fields
-
-
-class Account(models.Model):
-    tenant = models.ForeignKey('Tenant', on_delete=models.CASCADE)
-    id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                Right('id_card_number', 64),
-                'tenant',
-                name='unique_tenant_id_card_number',
-            ),
-        ]
-```
-
-Things to be aware of:
-
-- The constraint is enforced by the database only. Django's constraint validation (`full_clean()`, model forms)
-  cannot compute the hash, so a duplicate raises `IntegrityError` on save instead of a `ValidationError`.
-  For a friendly error, check in `clean()` with a regular lookup, e.g.
-  `Account.objects.filter(tenant=self.tenant, id_card_number=self.id_card_number).exclude(pk=self.pk).exists()`.
-- Records saved while the field was not `searchable` have no hash and are not covered until they are re-saved
-  (see [Changing `searchable` on a field with existing records](#changing-searchable-on-a-field-with-existing-records)).
-- MySQL does not allow functional indexes on `TEXT` expressions; wrap the expression in a cast, e.g.
-  `Cast(Right('id_card_number', 64), models.CharField(max_length=64))`.
-- The hash depends on `SECURED_FIELDS_HASH_SALT`. While records are being re-hashed after a salt change,
-  a duplicate stored with the old salt is not detected (see [Changing the Hash Salt](#changing-the-hash-salt)).
-
 ### Encryption
 
 ```python
