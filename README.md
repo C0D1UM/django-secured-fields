@@ -60,7 +60,7 @@ pip install django-secured-fields
    ]
 
    # optional
-   SECURED_FILDS_HASH_SALT = '500d492e'
+   SECURED_FIELDS_HASH_SALT = '500d492e'
    ```
 
 ## Usage
@@ -102,7 +102,7 @@ id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=Tru
 | Key | Required | Default | Description |
 | --- | -------- | ------- | ----------- |
 | `SECURED_FIELDS_KEY` | Yes | | Key(s) for using in encryption/decryption with Fernet. Usually generated from `python manage.py generate_key`. For rotation keys, use a list of keys instead (see [MultiFernet](https://cryptography.io/en/latest/fernet/#cryptography.fernet.MultiFernet)). |
-| `SECURED_FIELDS_HASH_SALT` | No | `''` | Salt to append after the field value before hashing. Usually generated from `python manage.py generate_key`. |
+| `SECURED_FIELDS_HASH_SALT` | No | `''` | Salt to append after the field value before hashing. Usually generated from `python manage.py generate_key`. Changing it requires re-saving existing records (see [Changing the Hash Salt](#changing-the-hash-salt)). |
 | `SECURED_FIELDS_FILE_STORAGE` | No | `'secured_fields.storage.EncryptedFileSystemStorage'` | File storage class used for storing encrypted file/image fields. See [EncryptedStorageMixin](#encryptedstoragemixin) |
 
 ## APIs
@@ -165,6 +165,16 @@ b'test'
 ```
 
 See more details in [MultiFernet.rotate](https://cryptography.io/en/latest/fernet/#cryptography.fernet.MultiFernet.rotate).
+
+### Changing the Hash Salt
+
+Changing `SECURED_FIELDS_HASH_SALT` requires re-saving all records of `searchable` fields, otherwise `exact`/`in` lookups will not match them:
+
+```python
+def resave_records(apps, schema_editor):
+    model = apps.get_model('myapp', 'MyModel')
+    model.objects.bulk_update(model.objects.all(), ['my_searchable_field'], batch_size=1000)
+```
 
 ### `EncryptedMixin`
 
