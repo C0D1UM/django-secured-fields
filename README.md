@@ -211,7 +211,6 @@ class EncryptedMinioMediaStorage(
 - Large files are not performance-friendly at the moment (see [#2](https://github.com/C0D1UM/django-secured-fields/issues/2))
 - Search on `BinaryField` does not supported at the moment (see [#6](https://github.com/C0D1UM/django-secured-fields/issues/6))
 - Changing `searchable` on a field with existing records requires re-saving the records to make search results consistent (see [Changing `searchable` on a field with existing records](#changing-searchable-on-a-field-with-existing-records))
-- Changing `SECURED_FIELDS_HASH_SALT` requires re-saving all records of `searchable` fields, since only one salt is supported at a time (see [Changing the Hash Salt](#changing-the-hash-salt))
 - `update()` only accepts plain values or `Value()` for encrypted fields; other expressions such as `F()`, `Case` or database functions raise `ExpressionNotSupported`, since their result would be written unencrypted (see [#52](https://github.com/C0D1UM/django-secured-fields/issues/52)). `bulk_update()` is supported
 
 ## Development
