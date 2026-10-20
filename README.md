@@ -60,7 +60,7 @@ pip install django-secured-fields
    ]
 
    # optional
-   SECURED_FILDS_HASH_SALT = '500d492e'
+   SECURED_FIELDS_HASH_SALT = '500d492e'
    ```
 
 ## Usage
@@ -102,7 +102,7 @@ id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=Tru
 | Key | Required | Default | Description |
 | --- | -------- | ------- | ----------- |
 | `SECURED_FIELDS_KEY` | Yes | | Key(s) for using in encryption/decryption with Fernet. Usually generated from `python manage.py generate_key`. For rotation keys, use a list of keys instead (see [MultiFernet](https://cryptography.io/en/latest/fernet/#cryptography.fernet.MultiFernet)). |
-| `SECURED_FIELDS_HASH_SALT` | No | `''` | Salt to append after the field value before hashing. Usually generated from `python manage.py generate_key`. |
+| `SECURED_FIELDS_HASH_SALT` | No | `''` | Salt to append after the field value before hashing. Usually generated from `python manage.py generate_key`. Changing it requires re-saving existing records (see [Changing the Hash Salt](#changing-the-hash-salt)). |
 | `SECURED_FIELDS_FILE_STORAGE` | No | `'secured_fields.storage.EncryptedFileSystemStorage'` | File storage class used for storing encrypted file/image fields. See [EncryptedStorageMixin](#encryptedstoragemixin) |
 
 ## APIs
@@ -135,6 +135,47 @@ def resave_records(apps, schema_editor):
 `bulk_update` re-encrypts through the same path as `save()` but batches the queries, and — unlike
 re-saving each record — does not overwrite `auto_now` date/datetime fields with the migration run time.
 
+#### Unique constraints on searchable fields
+
+Encryption is randomized, so the same value never produces the same encrypted text and a
+`unique=True` on an encrypted field would never trigger (it is ignored for that reason). On a
+`searchable` field, however, the stored value always ends with a 64-character sha256 hash of the value,
+which a functional `UniqueConstraint` can target, alone or together with other fields:
+
+```python
+from django.db import models
+from django.db.models.functions import Right
+
+import secured_fields
+
+
+class Account(models.Model):
+    tenant = models.ForeignKey('Tenant', on_delete=models.CASCADE)
+    id_card_number = secured_fields.EncryptedCharField(max_length=18, searchable=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Right('id_card_number', 64),
+                'tenant',
+                name='unique_tenant_id_card_number',
+            ),
+        ]
+```
+
+Things to be aware of:
+
+- The constraint is enforced by the database only. Django's constraint validation (`full_clean()`, model forms)
+  cannot compute the hash, so a duplicate raises `IntegrityError` on save instead of a `ValidationError`.
+  For a friendly error, check in `clean()` with a regular lookup, e.g.
+  `Account.objects.filter(tenant=self.tenant, id_card_number=self.id_card_number).exclude(pk=self.pk).exists()`.
+- Records saved while the field was not `searchable` have no hash and are not covered until they are re-saved
+  (see [Changing `searchable` on a field with existing records](#changing-searchable-on-a-field-with-existing-records)).
+- MySQL does not allow functional indexes on `TEXT` expressions; wrap the expression in a cast, e.g.
+  `Cast(Right('id_card_number', 64), models.CharField(max_length=64))`.
+- The hash depends on `SECURED_FIELDS_HASH_SALT`. While records are being re-hashed after a salt change,
+  a duplicate stored with the old salt is not detected (see [Changing the Hash Salt](#changing-the-hash-salt)).
+
 ### Encryption
 
 ```python
@@ -165,6 +206,24 @@ b'test'
 ```
 
 See more details in [MultiFernet.rotate](https://cryptography.io/en/latest/fernet/#cryptography.fernet.MultiFernet.rotate).
+
+### Changing the Hash Salt
+
+`SECURED_FIELDS_HASH_SALT` is only used for the hashed section of `searchable` fields; it does not affect
+encryption, so all records stay readable after changing it. However, `exact`/`in` lookups hash the searched
+value with the current salt only, so they stop matching existing records until those records are re-saved
+with the new salt. Unlike encryption keys, multiple salts are not supported, so plan the change for a time
+when lookup misses are acceptable, and re-save every searchable field right after deploying the new salt:
+
+```python
+def resave_records(apps, schema_editor):
+    model = apps.get_model('myapp', 'MyModel')
+    model.objects.bulk_update(model.objects.all(), ['my_searchable_field'], batch_size=1000)
+```
+
+> **Note:** older versions of this README spelled the setting `SECURED_FILDS_HASH_SALT` in the installation
+> example. That name is not read by the package, so a project which copied it has been using an empty salt.
+> Renaming it to `SECURED_FIELDS_HASH_SALT` changes the salt and requires re-saving records as described above.
 
 ### `EncryptedMixin`
 
@@ -201,6 +260,7 @@ class EncryptedMinioMediaStorage(
 - Large files are not performance-friendly at the moment (see [#2](https://github.com/C0D1UM/django-secured-fields/issues/2))
 - Search on `BinaryField` does not supported at the moment (see [#6](https://github.com/C0D1UM/django-secured-fields/issues/6))
 - Changing `searchable` on a field with existing records requires re-saving the records to make search results consistent (see [Changing `searchable` on a field with existing records](#changing-searchable-on-a-field-with-existing-records))
+- Changing `SECURED_FIELDS_HASH_SALT` requires re-saving all records of `searchable` fields, since only one salt is supported at a time (see [Changing the Hash Salt](#changing-the-hash-salt))
 - `update()` only accepts plain values or `Value()` for encrypted fields; other expressions such as `F()`, `Case` or database functions raise `ExpressionNotSupported`, since their result would be written unencrypted (see [#52](https://github.com/C0D1UM/django-secured-fields/issues/52)). `bulk_update()` is supported
 
 ## Development
